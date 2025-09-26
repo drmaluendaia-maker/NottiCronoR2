@@ -123,6 +123,10 @@
                         <button id="apply-swaps-btn" class="w-full mt-2 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-md">Aplicar Cambios</button>
                     </div>
                 </div>
+                <div id="applied-swaps-container" class="mt-4 border-t pt-4">
+                     <h4 class="font-semibold">Historial de Cambios:</h4>
+                     <div id="applied-swaps-list" class="mt-2 space-y-2 max-h-40 overflow-y-auto"></div>
+                </div>
             </div>
             
             <!-- Grupos -->
@@ -232,6 +236,7 @@
             daySlots: {},
             previousMonthShifts: { lastDay: [], secondLastDay: [] },
             pendingSwaps: [],
+            appliedSwaps: [],
             swappedShifts: []
         };
         let currentSchedule = null;
@@ -265,6 +270,7 @@
         const swapDayInInput = document.getElementById('swap-day-in');
         const pendingSwapsList = document.getElementById('pending-swaps-list');
         const applySwapsBtn = document.getElementById('apply-swaps-btn');
+        const appliedSwapsList = document.getElementById('applied-swaps-list');
         const exportPngBtn = document.getElementById('export-png-btn');
         const exportPdfBtn = document.getElementById('export-pdf-btn');
         const includeSummaryPdf = document.getElementById('include-summary-pdf');
@@ -373,8 +379,10 @@
 
         function generateAndDisplaySchedule() {
             state.pendingSwaps = [];
+            state.appliedSwaps = [];
             state.swappedShifts = [];
             renderPendingSwaps();
+            renderAppliedSwaps();
 
             const year = parseInt(yearInput.value);
             const month = parseInt(monthSelect.value);
@@ -393,10 +401,8 @@
                 validationList.innerHTML = '';
             } else {
                 renderCalendar(result.schedule, year, month);
-                renderSummary(result.stats);
-                runValidations(result.schedule, result.stats);
+                recalculateStatsAndUpdateUI(result.schedule);
             }
-            renderCriteriaSummary();
         }
         
         function generateSchedule(year, month) {
@@ -606,6 +612,7 @@
         
         function renderCriteriaSummary() {
             criteriaSummaryList.innerHTML = '';
+            if (!currentSchedule || currentSchedule.error) return;
             const residentsWithCriteria = state.residents.filter(r => r.status === 'on_leave' || r.blocked.length > 0 || r.manualAssignments.length > 0 || r.preferences.preferred.length > 0 || r.preferences.avoid.length > 0);
             if (residentsWithCriteria.length === 0) {
                 criteriaSummaryList.innerHTML = '<p class="text-gray-500 col-span-full">No hay criterios individuales definidos para este mes.</p>';
@@ -615,7 +622,7 @@
                 let criteriaHtml = `<div class="border rounded-lg p-3 bg-gray-50"><p class="font-bold text-gray-800">${res.name}</p><div class="mt-1 space-y-1">`;
                 if (res.status === 'on_leave') criteriaHtml += `<p class="text-gray-600 font-semibold">De Licencia</p>`;
                 
-                const resStats = currentSchedule?.stats.find(s => s.id === res.id);
+                const resStats = currentSchedule.stats.find(s => s.id === res.id);
                 const actualShifts = resStats ? resStats.shifts.map(s => s.day) : [];
 
                 if (res.manualAssignments.length > 0) criteriaHtml += `<p><span class="font-semibold text-green-600">Asignado:</span> Días ${res.manualAssignments.map(d => `<span class="font-bold text-green-600">${d}</span>`).join(', ')}</p>`;
@@ -743,9 +750,40 @@
             pendingSwapsList.innerHTML = state.pendingSwaps.map((swap, index) => `
                 <div class="text-xs p-1 bg-gray-100 rounded flex justify-between items-center">
                     <span>${swap.resOutName} (d${swap.dayOut}) ↔ ${swap.resInName} (d${swap.dayIn})</span>
-                    <button data-index="${index}" class="text-red-500 font-bold">X</button>
+                    <button data-index="${index}" class="text-red-500 font-bold px-2">X</button>
                 </div>
             `).join('');
+        }
+        
+        function renderAppliedSwaps() {
+             appliedSwapsList.innerHTML = state.appliedSwaps.map((swap, index) => `
+                <div class="text-xs p-1 bg-gray-100 rounded flex justify-between items-center">
+                    <span>${swap.resOutName} (d${swap.dayOut}) ↔ ${swap.resInName} (d${swap.dayIn})</span>
+                    <button data-index="${index}" class="text-blue-500 font-bold px-2 revert-swap-btn">Revertir</button>
+                </div>
+            `).join('');
+        }
+        
+        function recalculateStatsAndUpdateUI(schedule) {
+            const newStats = JSON.parse(JSON.stringify(state.residents));
+            newStats.forEach(r => { r.shifts = []; r.weekdayCount = 0; r.weekendCount = 0; });
+            for (const day in schedule) {
+                const date = new Date(yearInput.value, monthSelect.value, day);
+                const dayOfWeek = date.getDay();
+                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6 || state.holidays.includes(parseInt(day));
+                schedule[day].forEach(name => {
+                    const res = newStats.find(r => r.name === name);
+                    if (res) {
+                        const shift = { day: parseInt(day), type: isWeekend ? 'weekend' : 'weekday' };
+                        res.shifts.push(shift);
+                        if (isWeekend) res.weekendCount++; else res.weekdayCount++;
+                    }
+                });
+            }
+            currentSchedule.stats = newStats;
+            renderSummary(newStats);
+            runValidations(schedule, newStats);
+            renderCriteriaSummary();
         }
 
         function handleSwap() {
@@ -753,10 +791,17 @@
                 showToast('Primero genera un cronograma válido.', true);
                 return;
             }
+            if (state.pendingSwaps.length === 0) {
+                showToast('Añade al menos un cambio a la lista.', true);
+                return;
+            }
             
-            state.pendingSwaps.forEach(swap => {
+            const schedule = currentSchedule.schedule;
+            const swapsToApply = [...state.pendingSwaps];
+            state.pendingSwaps = [];
+            
+            swapsToApply.forEach(swap => {
                 const { resOutName, dayOut, resInName, dayIn } = swap;
-                const schedule = currentSchedule.schedule;
                 const outDaySchedule = schedule[dayOut] || [];
                 const inDaySchedule = schedule[dayIn] || [];
 
@@ -768,45 +813,30 @@
                 schedule[dayOut] = outDaySchedule.filter(name => name !== resOutName).concat(resInName);
                 schedule[dayIn] = inDaySchedule.filter(name => name !== resInName).concat(resOutName);
                 
+                state.appliedSwaps.push(swap);
                 state.swappedShifts.push({day: dayOut, residentName: resInName}, {day: dayIn, residentName: resOutName});
             });
 
-            const newStats = JSON.parse(JSON.stringify(state.residents));
-            newStats.forEach(r => { r.shifts = []; r.weekdayCount = 0; r.weekendCount = 0; });
-            for (const day in currentSchedule.schedule) {
-                const date = new Date(yearInput.value, monthSelect.value, day);
-                const dayOfWeek = date.getDay();
-                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6 || state.holidays.includes(parseInt(day));
-                currentSchedule.schedule[day].forEach(name => {
-                    const res = newStats.find(r => r.name === name);
-                    if (res) {
-                        const shift = { day: parseInt(day), type: isWeekend ? 'weekend' : 'weekday' };
-                        res.shifts.push(shift);
-                        if (isWeekend) res.weekendCount++; else res.weekdayCount++;
-                    }
-                });
-            }
-            currentSchedule.stats = newStats;
-
             // Validar sandwich post-cambio
-            state.pendingSwaps.forEach(swap => {
-                [swap.resOutName, swap.resInName].forEach(name => {
-                    const res = newStats.find(r => r.name === name);
+            swapsToApply.forEach(swap => {
+                recalculateStatsAndUpdateUI(schedule);
+                const resOut = currentSchedule.stats.find(r => r.name === swap.resOutName);
+                const resIn = currentSchedule.stats.find(r => r.name === swap.resInName);
+                [resOut, resIn].forEach(res => {
                     const shifts = res.shifts.map(s => s.day).sort((a,b)=>a-b);
                     for(let i = 0; i < shifts.length - 1; i++) {
                         if (shifts[i+1] - shifts[i] <= MIN_REST_DAYS) {
-                            showToast(`Advertencia: El cambio crea guardia sándwich para ${name} (días ${shifts[i]}, ${shifts[i+1]})`, true);
+                            showToast(`Advertencia: El cambio crea guardia sándwich para ${res.name} (días ${shifts[i]}, ${shifts[i+1]})`, true);
                         }
                     }
                 });
             });
 
-            state.pendingSwaps = [];
             renderPendingSwaps();
-            renderCalendar(currentSchedule.schedule, parseInt(yearInput.value), parseInt(monthSelect.value));
-            renderSummary(newStats);
-            runValidations(currentSchedule.schedule, newStats);
-            renderCriteriaSummary();
+            renderAppliedSwaps();
+            renderCalendar(schedule, parseInt(yearInput.value), parseInt(monthSelect.value));
+            recalculateStatsAndUpdateUI(schedule);
+            saveState();
             showToast('Cambios aplicados.');
         }
 
@@ -903,6 +933,30 @@
                 renderPendingSwaps();
             }
         });
+        
+        appliedSwapsList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('revert-swap-btn')) {
+                const index = parseInt(e.target.dataset.index);
+                const swapToRevert = state.appliedSwaps[index];
+                
+                const { resOutName, dayOut, resInName, dayIn } = swapToRevert;
+                const schedule = currentSchedule.schedule;
+                schedule[dayOut] = schedule[dayOut].filter(name => name !== resInName).concat(resOutName);
+                schedule[dayIn] = schedule[dayIn].filter(name => name !== resOutName).concat(resInName);
+
+                state.swappedShifts = state.swappedShifts.filter(s => 
+                    !(s.day === dayOut && s.residentName === resInName) && 
+                    !(s.day === dayIn && s.residentName === resOutName)
+                );
+                
+                state.appliedSwaps.splice(index, 1);
+                renderAppliedSwaps();
+                renderCalendar(schedule, parseInt(yearInput.value), parseInt(monthSelect.value));
+                recalculateStatsAndUpdateUI(schedule);
+                saveState();
+                showToast('Cambio revertido.');
+            }
+        });
 
         applySwapsBtn.addEventListener('click', handleSwap);
         
@@ -958,3 +1012,4 @@
     </script>
 </body>
 </html>
+
