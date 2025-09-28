@@ -1137,7 +1137,12 @@
         });
         
         generateBtn.addEventListener('click', generateAndDisplaySchedule);
+        
         [monthSelect, yearInput].forEach(el => el.addEventListener('change', () => {
+            // **CAMBIO APLICADO AQUÍ**
+            // Se limpian los datos de los turnos del mes anterior
+            state.previousMonthShifts = { lastDay: [], secondLastDay: [] };
+            
             updatePreviousMonthInputs();
             renderSlotsCalendar();
             generateAndDisplaySchedule();
@@ -1367,4 +1372,3 @@
     </script>
 </body>
 </html>
-
