@@ -83,6 +83,19 @@
                                     </div>
                                 </div>
                             </div>
+                             <div>
+                                <h4 class="text-md font-semibold text-gray-800">Objetivo de Guardias (por defecto)</h4>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                                    <div>
+                                        <label for="target-weekday-shifts" class="block text-sm font-medium">Guardias en semana</label>
+                                        <input type="number" id="target-weekday-shifts" value="4" min="0" class="mt-1 block w-full rounded-md">
+                                    </div>
+                                    <div>
+                                        <label for="target-weekend-shifts" class="block text-sm font-medium">Guardias en finde/feriado</label>
+                                        <input type="number" id="target-weekend-shifts" value="2" min="0" class="mt-1 block w-full rounded-md">
+                                    </div>
+                                </div>
+                            </div>
                             <div>
                                 <label for="holidays-input" class="block text-sm font-medium">Días Feriados (separados por comas)</label>
                                 <input type="text" id="holidays-input" placeholder="Ej: 1, 17, 25" class="mt-1 block w-full rounded-md">
@@ -121,24 +134,14 @@
                 <div id="validation-list" class="space-y-2"></div>
             </div>
 
-            <!-- Filtros y Exportación iCal -->
-            <div id="calendar-filter-container" class="bg-white p-4 rounded-lg shadow-lg mb-6">
-                <h3 class="text-lg font-semibold mb-4 text-gray-700">Filtros y Exportación de Calendario</h3>
-                <div class="flex flex-col md:flex-row gap-4 items-start">
-                    <div class="w-full md:w-2/3">
-                        <label class="block text-sm font-medium">Mostrar solo guardias de:</label>
-                        <div id="resident-filter-checklist" class="mt-1 max-h-40 overflow-y-auto border rounded-md p-2 space-y-1 bg-white grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
-                    </div>
-                    <div class="w-full md:w-1/3 mt-4 md:mt-0">
-                         <button id="export-ical-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md">Exportar iCal para Seleccionados</button>
-                         <p class="text-xs text-gray-500 mt-2">Selecciona residentes para filtrar o exportar.</p>
-                    </div>
-                </div>
-            </div>
-
             <!-- Calendario de Cronograma -->
             <div id="schedule-container" class="bg-white p-4 rounded-lg shadow-lg mb-6">
                 <h2 id="calendar-title" class="text-2xl font-semibold text-center mb-4"></h2>
+                 <!-- Filtros Rápidos de Residentes -->
+                <div id="resident-quick-filter-container" class="mb-4">
+                    <p class="text-sm font-medium text-gray-600 mb-2">Filtrar por residente:</p>
+                    <div id="resident-quick-filter" class="flex flex-wrap gap-2"></div>
+                </div>
                 <div id="calendar-grid" class="grid grid-cols-7 gap-1 text-xs sm:text-sm"></div>
             </div>
 
@@ -204,6 +207,17 @@
                                 <div id="groups-display" class="mt-2 space-y-2"></div>
                             </div>
                         </div>
+                    </div>
+                </div>
+                <!-- Exportación de Calendario -->
+                <div class="bg-white rounded-lg shadow-md">
+                     <div class="accordion-header p-4 cursor-pointer flex justify-between items-center">
+                        <h3 class="text-lg font-semibold text-gray-700">Exportación de Calendario iCal</h3>
+                        <svg class="accordion-arrow w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                    <div class="accordion-content p-4 border-t text-center">
+                         <button id="export-ical-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md">Exportar iCal para Residentes Filtrados</button>
+                         <p class="text-xs text-gray-500 mt-2">Usa los filtros rápidos sobre el calendario para seleccionar qué residentes exportar.</p>
                     </div>
                 </div>
                 <!-- Gestión de Residentes -->
@@ -310,7 +324,6 @@
     document.addEventListener('DOMContentLoaded', () => {
         const CORRECT_PASSWORD = "Notti2603";
         const MIN_REST_DAYS = 2;
-        const TARGET_SHIFTS = { weekday: 4, weekend: 2 };
 
         let state = { 
             residents: [], 
@@ -322,7 +335,8 @@
             pendingSwaps: [],
             appliedSwaps: [],
             swappedShifts: [],
-            filteredResidents: []
+            filteredResidents: [],
+            targetShifts: { weekday: 4, weekend: 2 }
         };
         let currentSchedule = null;
 
@@ -338,11 +352,13 @@
         const holidaysInput = document.getElementById('holidays-input');
         const secondLastDayShiftsInput = document.getElementById('second-last-day-shifts');
         const lastDayShiftsInput = document.getElementById('last-day-shifts');
+        const targetWeekdayShiftsInput = document.getElementById('target-weekday-shifts');
+        const targetWeekendShiftsInput = document.getElementById('target-weekend-shifts');
         const slotsCalendarGrid = document.getElementById('slots-calendar-grid');
         const calendarGrid = document.getElementById('calendar-grid');
         const calendarTitle = document.getElementById('calendar-title');
         const validationList = document.getElementById('validation-list');
-        const residentFilterChecklist = document.getElementById('resident-filter-checklist');
+        const residentQuickFilter = document.getElementById('resident-quick-filter');
         const exportIcalBtn = document.getElementById('export-ical-btn');
         const criteriaSummaryList = document.getElementById('criteria-summary-list');
         const summaryGrid = document.getElementById('summary-grid');
@@ -411,6 +427,9 @@
                 loaded.appliedSwaps = [];
                 loaded.swappedShifts = [];
                 loaded.filteredResidents = [];
+                if (!loaded.targetShifts) {
+                    loaded.targetShifts = { weekday: 4, weekend: 2 };
+                }
                 Object.assign(state, loaded);
             } else {
                 state.residents = ["Luchi", "Fer", "Regi", "Agos", "Cami", "Agus", "Clara", "Mati", "Celmi", "Sabri", "Tati", "Jessi", "Ro", "Vale G", "Lule", "Coti", "Santi", "Dai", "Mile"].map((name, i) => ({
@@ -447,13 +466,15 @@
 
         function refreshUIFromState() {
             holidaysInput.value = state.holidays.join(', ');
+            targetWeekdayShiftsInput.value = state.targetShifts.weekday;
+            targetWeekendShiftsInput.value = state.targetShifts.weekend;
             updatePreviousMonthInputs();
             renderResidentList();
             renderGroupChecklist();
             renderGroupsList();
             renderSlotsCalendar();
             populateSwapSelects();
-            renderResidentFilter();
+            renderQuickFilter();
             generateAndDisplaySchedule();
         }
 
@@ -574,8 +595,8 @@
             candidates.forEach(res => {
                 let score = 0;
                 
-                if (slot.type === 'weekday' && res.weekdayCount >= TARGET_SHIFTS.weekday) score -= 50000;
-                if (slot.type === 'weekend' && res.weekendCount >= TARGET_SHIFTS.weekend) score -= 50000;
+                if (slot.type === 'weekday' && res.weekdayCount >= state.targetShifts.weekday) score -= 50000;
+                if (slot.type === 'weekend' && res.weekendCount >= state.targetShifts.weekend) score -= 50000;
 
                 score -= res.shifts.length * 10000;
                 score += (slot.day - res.lastShiftDay) * 1000;
@@ -765,12 +786,16 @@
                     </div>`).join('');
         }
         
-        function renderResidentFilter() {
-            residentFilterChecklist.innerHTML = state.residents.map(res => `
-                <div class="flex items-center text-sm">
-                    <input type="checkbox" id="filter-check-${res.id}" value="${res.name}" class="h-4 w-4 rounded">
-                    <label for="filter-check-${res.id}" class="ml-2 block">${res.name}</label>
-                </div>`).join('');
+        function renderQuickFilter() {
+            residentQuickFilter.innerHTML = '';
+            state.residents.forEach(res => {
+                const isActive = state.filteredResidents.includes(res.name);
+                const filterChip = document.createElement('button');
+                filterChip.textContent = res.name;
+                filterChip.dataset.residentName = res.name;
+                filterChip.className = `px-3 py-1 text-xs font-medium rounded-full cursor-pointer transition-colors ${isActive ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`;
+                residentQuickFilter.appendChild(filterChip);
+            });
         }
         
         function renderResidentList() {
@@ -1002,7 +1027,8 @@
                 groups: state.groups,
                 holidays: state.holidays,
                 daySlots: state.daySlots,
-                previousMonthShifts: state.previousMonthShifts
+                previousMonthShifts: state.previousMonthShifts,
+                targetShifts: state.targetShifts
             };
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(configToExport, null, 2));
             const downloadAnchorNode = document.createElement('a');
@@ -1027,6 +1053,7 @@
                         state.holidays = importedConfig.holidays || [];
                         state.daySlots = importedConfig.daySlots || {};
                         state.previousMonthShifts = importedConfig.previousMonthShifts || { lastDay: [], secondLastDay: [] };
+                        state.targetShifts = importedConfig.targetShifts || { weekday: 4, weekend: 2};
                         saveState();
                         refreshUIFromState();
                         showToast('Configuración importada exitosamente.');
@@ -1060,6 +1087,20 @@
             generateAndDisplaySchedule();
         }));
         
+        targetWeekdayShiftsInput.addEventListener('change', (e) => {
+            state.targetShifts.weekday = parseInt(e.target.value) || 0;
+            saveState();
+            showToast('Objetivo de guardias de semana actualizado.');
+            generateAndDisplaySchedule();
+        });
+
+        targetWeekendShiftsInput.addEventListener('change', (e) => {
+            state.targetShifts.weekend = parseInt(e.target.value) || 0;
+            saveState();
+            showToast('Objetivo de guardias de fin de semana actualizado.');
+            generateAndDisplaySchedule();
+        });
+
         slotsCalendarGrid.addEventListener('change', (e) => {
             if (e.target.classList.contains('slot-input')) {
                 const day = e.target.dataset.day;
@@ -1109,11 +1150,7 @@
                     manualAssignments: []
                 });
                 saveState();
-                renderResidentList();
-                renderGroupChecklist();
-                populateSwapSelects();
-                renderResidentFilter();
-                recalculateStatsAndUpdateUI(currentSchedule.schedule);
+                refreshUIFromState();
                 newResidentNameInput.value = '';
                 showToast(`Residente ${newName} añadido.`);
             } else {
@@ -1201,10 +1238,19 @@
 
         applySwapsBtn.addEventListener('click', handleSwap);
         
-        residentFilterChecklist.addEventListener('change', () => {
-            state.filteredResidents = Array.from(residentFilterChecklist.querySelectorAll('input:checked')).map(cb => cb.value);
-            if(currentSchedule && !currentSchedule.error) {
-                renderCalendar(currentSchedule.schedule, parseInt(yearInput.value), parseInt(monthSelect.value));
+        residentQuickFilter.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                const residentName = e.target.dataset.residentName;
+                const index = state.filteredResidents.indexOf(residentName);
+                if (index > -1) {
+                    state.filteredResidents.splice(index, 1);
+                } else {
+                    state.filteredResidents.push(residentName);
+                }
+                renderQuickFilter(); // Re-render chips to update styles
+                if(currentSchedule && !currentSchedule.error) {
+                    renderCalendar(currentSchedule.schedule, parseInt(yearInput.value), parseInt(monthSelect.value));
+                }
             }
         });
 
@@ -1264,3 +1310,4 @@
     </script>
 </body>
 </html>
+
