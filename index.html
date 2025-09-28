@@ -268,15 +268,17 @@
                             <option value="on_leave">Licencia / Fuera de Cronograma</option>
                         </select>
                     </div>
+                     <div id="target-shifts-container" class="space-y-2 p-3 border rounded-md">
+                        <p class="text-sm font-medium">Objetivo de Guardias Individual</p>
+                         <p class="text-xs text-gray-500">Dejar en blanco para usar el valor por defecto.</p>
+                        <div class="flex items-center gap-4"><label class="text-sm">Semana:</label><input type="number" id="individual-target-weekday" placeholder="Defecto" min="0" class="w-24 rounded-md"></div>
+                        <div class="flex items-center gap-4"><label class="text-sm">Finde/Feriado:</label><input type="number" id="individual-target-weekend" placeholder="Defecto" min="0" class="w-24 rounded-md"></div>
+                    </div>
                     <div id="equity-container" class="space-y-2 p-3 border rounded-md">
                         <p class="text-sm font-medium">Contadores de Equidad (historial)</p>
                         <div class="flex items-center gap-4"><label class="text-sm">Sábados:</label><input type="number" id="saturday-count" min="0" class="w-20 rounded-md"></div>
                         <div class="flex items-center gap-4"><label class="text-sm">Domingos:</label><input type="number" id="sunday-count" min="0" class="w-20 rounded-md"></div>
                         <div class="flex items-center gap-4"><label class="text-sm">Feriados:</label><input type="number" id="holiday-count" min="0" class="w-20 rounded-md"></div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-green-700">Asignaciones Manuales (Obligatorio)</label>
-                        <input type="text" id="manual-assignments-input" placeholder="Ej: 5, 12, 23" class="mt-1 block w-full border-green-300 rounded-md shadow-sm">
                     </div>
                 </div>
                 <div class="space-y-4">
@@ -284,6 +286,10 @@
                         <div><label class="block text-sm font-medium">Días preferidos</label><input type="text" id="preferred-days" class="mt-1 block w-full rounded-md"></div>
                         <div><label class="block text-sm font-medium mt-2">Días a evitar</label><input type="text" id="avoid-days" class="mt-1 block w-full rounded-md"></div>
                         <div><label class="block text-sm font-medium text-red-700 mt-2">Días bloqueados (Obligatorio)</label><input type="text" id="blocked-days" class="mt-1 block w-full border-red-300 rounded-md"></div>
+                         <div>
+                        <label class="block text-sm font-medium text-green-700 mt-2">Asignaciones Manuales (Obligatorio)</label>
+                        <input type="text" id="manual-assignments-input" placeholder="Ej: 5, 12, 23" class="mt-1 block w-full border-green-300 rounded-md shadow-sm">
+                    </div>
                     </div>
                     <div id="avoid-residents-section">
                         <label class="block text-sm font-medium">Evitar trabajar con</label>
@@ -342,6 +348,7 @@
 
         // DOM Elements
         const loginForm = document.getElementById('login-form');
+        // ... (rest of DOM elements are the same)
         const passwordInput = document.getElementById('password-input');
         const errorMessage = document.getElementById('error-message');
         const loginScreen = document.getElementById('login-screen');
@@ -388,6 +395,8 @@
         const modalResidentName = document.getElementById('modal-resident-name');
         const modalResidentId = document.getElementById('modal-resident-id');
         const residentStatusSelect = document.getElementById('resident-status');
+        const individualTargetWeekdayInput = document.getElementById('individual-target-weekday');
+        const individualTargetWeekendInput = document.getElementById('individual-target-weekend');
         const equityContainer = document.getElementById('equity-container');
         const saturdayCountInput = document.getElementById('saturday-count');
         const sundayCountInput = document.getElementById('sunday-count');
@@ -407,6 +416,7 @@
         const dayModalSaveBtn = document.getElementById('day-modal-save-btn');
         const dayModalCloseBtn = document.getElementById('day-modal-close-btn');
         let currentDayModalDay = null;
+
 
         function showToast(message, isError = false) {
             toast.textContent = message;
@@ -430,6 +440,14 @@
                 if (!loaded.targetShifts) {
                     loaded.targetShifts = { weekday: 4, weekend: 2 };
                 }
+                // Ensure backward compatibility for individual target shifts
+                if(loaded.residents) {
+                    loaded.residents.forEach(r => {
+                        if(!r.targetShifts) {
+                            r.targetShifts = { weekday: null, weekend: null };
+                        }
+                    });
+                }
                 Object.assign(state, loaded);
             } else {
                 state.residents = ["Luchi", "Fer", "Regi", "Agos", "Cami", "Agus", "Clara", "Mati", "Celmi", "Sabri", "Tati", "Jessi", "Ro", "Vale G", "Lule", "Coti", "Santi", "Dai", "Mile"].map((name, i) => ({
@@ -437,7 +455,8 @@
                     preferences: { preferred: [], avoid: [] },
                     blocked: [], avoidResidents: [],
                     equity: { saturdays: 0, sundays: 0, holidays: 0 },
-                    manualAssignments: []
+                    manualAssignments: [],
+                    targetShifts: { weekday: null, weekend: null }
                 }));
                 const sept2025Key = '2025-8';
                 state.daySlots[sept2025Key] = {
@@ -594,9 +613,12 @@
 
             candidates.forEach(res => {
                 let score = 0;
-                
-                if (slot.type === 'weekday' && res.weekdayCount >= state.targetShifts.weekday) score -= 50000;
-                if (slot.type === 'weekend' && res.weekendCount >= state.targetShifts.weekend) score -= 50000;
+                const residentData = state.residents.find(r => r.id === res.id);
+                const targetWeekday = residentData.targetShifts.weekday ?? state.targetShifts.weekday;
+                const targetWeekend = residentData.targetShifts.weekend ?? state.targetShifts.weekend;
+
+                if (slot.type === 'weekday' && res.weekdayCount >= targetWeekday) score -= 50000;
+                if (slot.type === 'weekend' && res.weekendCount >= targetWeekend) score -= 50000;
 
                 score -= res.shifts.length * 10000;
                 score += (slot.day - res.lastShiftDay) * 1000;
@@ -734,11 +756,20 @@
         function renderCriteriaSummary() {
             criteriaSummaryList.innerHTML = '';
             if (!currentSchedule || currentSchedule.error) return;
-            const residentsWithCriteria = state.residents.filter(r => r.status === 'on_leave' || r.blocked.length > 0 || r.manualAssignments.length > 0 || r.preferences.preferred.length > 0 || r.preferences.avoid.length > 0);
+            const residentsWithCriteria = state.residents.filter(r => 
+                r.status === 'on_leave' || 
+                r.blocked.length > 0 || 
+                r.manualAssignments.length > 0 || 
+                r.preferences.preferred.length > 0 || 
+                r.preferences.avoid.length > 0 ||
+                (r.targetShifts && (r.targetShifts.weekday !== null || r.targetShifts.weekend !== null))
+            );
+
             if (residentsWithCriteria.length === 0) {
                 criteriaSummaryList.innerHTML = '<p class="text-gray-500 col-span-full">No hay criterios individuales definidos para este mes.</p>';
                 return;
             }
+
             residentsWithCriteria.forEach(res => {
                 let criteriaHtml = `<div class="border rounded-lg p-3 bg-gray-50"><p class="font-bold text-gray-800">${res.name}</p><div class="mt-1 space-y-1">`;
                 if (res.status === 'on_leave') criteriaHtml += `<p class="text-gray-600 font-semibold">De Licencia</p>`;
@@ -746,6 +777,11 @@
                 const resStats = currentSchedule.stats.find(s => s.id === res.id);
                 const actualShifts = resStats ? resStats.shifts.map(s => s.day) : [];
 
+                if (res.targetShifts && (res.targetShifts.weekday !== null || res.targetShifts.weekend !== null)) {
+                    const weekdayTarget = res.targetShifts.weekday ?? 'D';
+                    const weekendTarget = res.targetShifts.weekend ?? 'D';
+                    criteriaHtml += `<p><span class="font-semibold text-purple-600">Objetivo:</span> ${weekdayTarget} sem, ${weekendTarget} fin</p>`;
+                }
                 if (res.manualAssignments.length > 0) criteriaHtml += `<p><span class="font-semibold text-green-600">Asignado:</span> Días ${res.manualAssignments.map(d => `<span class="font-bold text-green-600">${d}</span>`).join(', ')}</p>`;
                 if (res.blocked.length > 0) criteriaHtml += `<p><span class="font-semibold text-red-600">Bloqueado:</span> Días ${res.blocked.map(d => `<span class="font-bold text-red-600">${d}</span>`).join(', ')}</p>`;
                 if (res.preferences.preferred.length > 0) {
@@ -812,6 +848,10 @@
             modalResidentName.textContent = `Preferencias de ${res.name}`;
             modalResidentId.value = res.id;
             residentStatusSelect.value = res.status;
+
+            individualTargetWeekdayInput.value = res.targetShifts.weekday ?? '';
+            individualTargetWeekendInput.value = res.targetShifts.weekend ?? '';
+
             saturdayCountInput.value = res.equity.saturdays;
             sundayCountInput.value = res.equity.sundays;
             holidayCountInput.value = res.equity.holidays;
@@ -832,6 +872,12 @@
             const resId = parseInt(modalResidentId.value);
             const res = state.residents.find(r => r.id === resId);
             const parseDays = (input) => input.value.split(',').map(s => parseInt(s.trim())).filter(Boolean);
+            
+            const targetWeekday = individualTargetWeekdayInput.value;
+            const targetWeekend = individualTargetWeekendInput.value;
+            res.targetShifts.weekday = targetWeekday === '' ? null : parseInt(targetWeekday);
+            res.targetShifts.weekend = targetWeekend === '' ? null : parseInt(targetWeekend);
+
             res.status = residentStatusSelect.value;
             res.equity = { saturdays: parseInt(saturdayCountInput.value), sundays: parseInt(sundayCountInput.value), holidays: parseInt(holidayCountInput.value) };
             res.preferences = { preferred: parseDays(preferredDaysInput), avoid: parseDays(avoidDaysInput) };
@@ -847,10 +893,17 @@
         function toggleModalSections(status) {
             const show = (el) => el.style.display = 'block';
             const hide = (el) => el.style.display = 'none';
+            const targetShiftsContainer = document.getElementById('target-shifts-container');
             if (status === 'on_leave') {
-                hide(equityContainer); hide(daysPreferenceSection); hide(document.getElementById('avoid-residents-section')); hide(manualAssignmentsInput.parentElement);
+                hide(equityContainer); 
+                hide(daysPreferenceSection); 
+                hide(document.getElementById('avoid-residents-section'));
+                hide(targetShiftsContainer);
             } else {
-                show(equityContainer); show(daysPreferenceSection); show(document.getElementById('avoid-residents-section')); show(manualAssignmentsInput.parentElement);
+                show(equityContainer); 
+                show(daysPreferenceSection); 
+                show(document.getElementById('avoid-residents-section'));
+                show(targetShiftsContainer);
             }
         }
         
@@ -1048,6 +1101,9 @@
                 try {
                     const importedConfig = JSON.parse(e.target.result);
                     if (importedConfig.residents && importedConfig.daySlots) {
+                        importedConfig.residents.forEach(r => {
+                            if(!r.targetShifts) r.targetShifts = { weekday: null, weekend: null };
+                        });
                         state.residents = importedConfig.residents;
                         state.groups = importedConfig.groups || [];
                         state.holidays = importedConfig.holidays || [];
@@ -1147,7 +1203,8 @@
                     preferences: { preferred: [], avoid: [] },
                     blocked: [], avoidResidents: [],
                     equity: { saturdays: 0, sundays: 0, holidays: 0 },
-                    manualAssignments: []
+                    manualAssignments: [],
+                    targetShifts: { weekday: null, weekend: null }
                 });
                 saveState();
                 refreshUIFromState();
