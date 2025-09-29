@@ -26,6 +26,81 @@
         .accordion-content { display: none; }
         .accordion-arrow { transition: transform 0.2s ease-in-out; }
         .accordion-header.active .accordion-arrow { transform: rotate(180deg); }
+        
+        /* --- Tooltip Styles --- */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 240px;
+            background-color: #374151; /* gray-700 */
+            color: #fff;
+            text-align: center; /* Centered text */
+            border-radius: 6px;
+            padding: 8px 12px;
+            position: absolute;
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.75rem; /* text-xs */
+            line-height: 1.4;
+            font-weight: 400;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+
+            /* Default position: above the icon */
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        .tooltip .tooltiptext::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #374151 transparent transparent transparent;
+        }
+
+        /* --- Tooltip direction modifiers --- */
+        /* For tooltips needing to show the bubble to the left */
+        .tooltip-left .tooltiptext {
+            bottom: 50%;
+            right: 125%;
+            left: auto;
+            transform: translateY(50%);
+        }
+        .tooltip-left .tooltiptext::after {
+            top: 50%;
+            left: 100%;
+            right: auto;
+            margin-top: -5px;
+            margin-left: 0;
+            border-color: transparent transparent transparent #374151;
+        }
+
+        /* For tooltips needing to show the bubble to the right */
+        .tooltip-right .tooltiptext {
+            bottom: 50%;
+            left: 125%;
+            transform: translateY(50%);
+        }
+        .tooltip-right .tooltiptext::after {
+            top: 50%;
+            right: 100%;
+            left: auto;
+            margin-top: -5px;
+            margin-left: 0;
+            border-color: transparent #374151 transparent transparent;
+        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -71,7 +146,13 @@
                     <div class="accordion-content p-4 border-t">
                         <div class="space-y-4">
                             <div>
-                                <h4 class="text-md font-semibold text-gray-800">Descansos Previos</h4>
+                                <h4 class="text-md font-semibold text-gray-800 flex items-center gap-2">
+                                    Descansos Previos
+                                    <div class="tooltip">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        <span class="tooltiptext">Introduce los nombres de los residentes que estuvieron de guardia en los últimos dos días del mes anterior para asegurar que tengan su descanso correspondiente.</span>
+                                    </div>
+                                </h4>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
                                     <div>
                                         <label id="second-last-day-label" for="second-last-day-shifts" class="block text-sm font-medium">Guardias del día anterior al último</label>
@@ -84,7 +165,13 @@
                                 </div>
                             </div>
                              <div>
-                                <h4 class="text-md font-semibold text-gray-800">Objetivo de Guardias (por defecto)</h4>
+                                <h4 class="text-md font-semibold text-gray-800 flex items-center gap-2">
+                                    Objetivo de Guardias (por defecto)
+                                    <div class="tooltip">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        <span class="tooltiptext">Establece el número deseado de guardias por residente. El algoritmo intentará cumplir este objetivo, pero la equidad y la cobertura total de cupos tienen prioridad.</span>
+                                    </div>
+                                </h4>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
                                     <div>
                                         <label for="target-weekday-shifts" class="block text-sm font-medium">Guardias en semana</label>
@@ -97,7 +184,13 @@
                                 </div>
                             </div>
                             <div>
-                                <label for="holidays-input" class="block text-sm font-medium">Días Feriados (separados por comas)</label>
+                                <label for="holidays-input" class="block text-sm font-medium flex items-center gap-2">
+                                    Días Feriados (separados por comas)
+                                    <div class="tooltip">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        <span class="tooltiptext">Introduce los números de los días del mes que son feriados, separados por comas. Estos días contarán como 'finde/feriado' para el cómputo de guardias.</span>
+                                    </div>
+                                </label>
                                 <input type="text" id="holidays-input" placeholder="Ej: 1, 17, 25" class="mt-1 block w-full rounded-md">
                             </div>
                              <div class="flex flex-wrap justify-center gap-3">
@@ -118,7 +211,13 @@
                 <!-- Cupos por Día -->
                 <div id="slots-config-container" class="bg-white rounded-lg shadow-md">
                      <div class="accordion-header p-4 cursor-pointer flex justify-between items-center">
-                        <h3 class="text-lg font-semibold text-gray-700">Configuración de Cupos por Día</h3>
+                        <h3 class="text-lg font-semibold text-gray-700 flex items-center gap-2">
+                            Configuración de Cupos por Día
+                            <div class="tooltip">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <span class="tooltiptext">Especifica cuántos residentes se necesitan para la guardia de cada día del mes. Puedes cambiar los valores y se guardarán automáticamente para este mes.</span>
+                            </div>
+                        </h3>
                         <svg class="accordion-arrow w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                     <div class="accordion-content p-4 border-t">
@@ -130,7 +229,13 @@
 
             <!-- Área de Validación -->
             <div id="validation-container" class="bg-white p-4 rounded-lg shadow-lg mb-6">
-                <h3 class="text-lg font-semibold mb-4 text-gray-700">Área de Validación</h3>
+                <h3 class="text-lg font-semibold mb-4 text-gray-700 flex items-center gap-2">
+                    Área de Validación
+                    <div class="tooltip">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <span class="tooltiptext">Aquí se mostrarán validaciones automáticas sobre el cronograma generado, como el cumplimiento de los descansos (guardias "sándwich") y las asignaciones/bloqueos obligatorios.</span>
+                    </div>
+                </h3>
                 <div id="validation-list" class="space-y-2"></div>
             </div>
 
@@ -139,7 +244,13 @@
                 <h2 id="calendar-title" class="text-2xl font-semibold text-center mb-4"></h2>
                  <!-- Filtros Rápidos de Residentes -->
                 <div id="resident-quick-filter-container" class="mb-4">
-                    <p class="text-sm font-medium text-gray-600 mb-2">Filtrar por residente:</p>
+                    <p class="text-sm font-medium text-gray-600 mb-2 flex items-center">
+                        Filtrar por residente:
+                        <div class="tooltip ml-1 tooltip-right">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            <span class="tooltiptext">Haz clic en los nombres para resaltar sus guardias. Puedes seleccionar varios a la vez. Esto también sirve para filtrar la exportación a iCal.</span>
+                        </div>
+                    </p>
                     <div id="resident-quick-filter" class="flex flex-wrap gap-2"></div>
                 </div>
                 <div id="calendar-grid" class="grid grid-cols-7 gap-1 text-xs sm:text-sm"></div>
@@ -148,7 +259,13 @@
             <!-- Resumen de Criterios Individuales -->
              <div class="bg-white rounded-lg shadow-md mb-6">
                 <div class="accordion-header p-4 cursor-pointer flex justify-between items-center">
-                    <h3 class="text-lg font-semibold text-gray-700">Resumen de Criterios Individuales</h3>
+                    <h3 class="text-lg font-semibold text-gray-700 flex items-center gap-2">
+                        Resumen de Criterios Individuales
+                        <div class="tooltip">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            <span class="tooltiptext">Un resumen de todas las reglas y preferencias especiales que has configurado, y si se cumplieron (verde) o no (rojo) en el cronograma actual.</span>
+                        </div>
+                    </h3>
                     <svg class="accordion-arrow w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                 </div>
                 <div id="criteria-summary-container" class="accordion-content p-4 border-t">
@@ -161,7 +278,13 @@
                  <!-- Cambios Puntuales -->
                 <div class="bg-white rounded-lg shadow-md">
                     <div class="accordion-header p-4 cursor-pointer flex justify-between items-center">
-                        <h3 class="text-lg font-semibold text-gray-700">Cambios Voluntarios (1x1)</h3>
+                        <h3 class="text-lg font-semibold text-gray-700 flex items-center gap-2">
+                            Cambios Voluntarios (1x1)
+                            <div class="tooltip">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <span class="tooltiptext">Registra los cambios de guardia acordados entre residentes. Selecciona quién sale, qué día, y quién entra y qué día. Añade los cambios y luego presiona 'Aplicar'.</span>
+                            </div>
+                        </h3>
                         <svg class="accordion-arrow w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                     <div id="swap-container" class="accordion-content p-4 border-t">
@@ -190,7 +313,13 @@
                  <!-- Grupos de Trabajo -->
                 <div class="bg-white rounded-lg shadow-md">
                      <div class="accordion-header p-4 cursor-pointer flex justify-between items-center">
-                        <h3 class="text-lg font-semibold text-gray-700">Grupos de Trabajo</h3>
+                        <h3 class="text-lg font-semibold text-gray-700 flex items-center gap-2">
+                            Grupos de Trabajo
+                            <div class="tooltip">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <span class="tooltiptext">Crea grupos de residentes que prefieren trabajar juntos. El algoritmo intentará que coincidan en las mismas guardias cuando sea posible.</span>
+                            </div>
+                        </h3>
                         <svg class="accordion-arrow w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                     <div id="groups-container" class="accordion-content p-4 border-t">
@@ -212,7 +341,13 @@
                 <!-- Exportación de Calendario -->
                 <div class="bg-white rounded-lg shadow-md">
                      <div class="accordion-header p-4 cursor-pointer flex justify-between items-center">
-                        <h3 class="text-lg font-semibold text-gray-700">Exportación de Calendario iCal</h3>
+                        <h3 class="text-lg font-semibold text-gray-700 flex items-center gap-2">
+                            Exportación de Calendario iCal
+                            <div class="tooltip">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <span class="tooltiptext">Genera un archivo .ics que puedes importar en Google Calendar, Outlook o el calendario de tu móvil. Solo se exportarán los calendarios de los residentes que hayas seleccionado en los filtros rápidos.</span>
+                            </div>
+                        </h3>
                         <svg class="accordion-arrow w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                     <div class="accordion-content p-4 border-t text-center">
@@ -223,7 +358,13 @@
                 <!-- Gestión de Residentes -->
                 <div class="bg-white rounded-lg shadow-md">
                      <div class="accordion-header p-4 cursor-pointer flex justify-between items-center">
-                        <h3 class="text-lg font-semibold text-gray-700">Gestión de Residentes</h3>
+                        <h3 class="text-lg font-semibold text-gray-700 flex items-center gap-2">
+                            Gestión de Residentes
+                             <div class="tooltip">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <span class="tooltiptext">Añade o elimina residentes de la lista maestra. Los cambios se guardan permanentemente en la memoria de tu navegador.</span>
+                            </div>
+                        </h3>
                         <svg class="accordion-arrow w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                     <div id="resident-management-container" class="accordion-content p-4 border-t">
@@ -245,7 +386,13 @@
 
             <!-- Resumen por Residente -->
             <div id="summary-container" class="mt-6">
-                 <h3 class="text-xl font-semibold mb-4">Resumen y Preferencias por Residente</h3>
+                 <h3 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                    Resumen y Preferencias por Residente
+                    <div class="tooltip">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <span class="tooltiptext">Este es el resumen general de guardias por residente. Haz clic en el nombre de cualquiera para abrir una ventana y configurar sus preferencias y reglas individuales.</span>
+                    </div>
+                </h3>
                  <div id="summary-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
             </div>
         </div>
@@ -262,20 +409,38 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-6">
                     <div>
-                        <label class="block text-sm font-medium">Estado</label>
+                        <label class="block text-sm font-medium flex items-center gap-2">
+                            Estado
+                            <div class="tooltip tooltip-right">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <span class="tooltiptext">'Activo' significa que el residente será incluido en la generación del cronograma. 'Licencia' lo excluye completamente.</span>
+                            </div>
+                        </label>
                         <select id="resident-status" class="mt-1 block w-full rounded-md">
                             <option value="active">Activo</option>
                             <option value="on_leave">Licencia / Fuera de Cronograma</option>
                         </select>
                     </div>
                      <div id="target-shifts-container" class="space-y-2 p-3 border rounded-md">
-                        <p class="text-sm font-medium">Objetivo de Guardias Individual</p>
+                        <p class="text-sm font-medium flex items-center gap-2">
+                            Objetivo de Guardias Individual
+                            <div class="tooltip tooltip-right">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <span class="tooltiptext">Si un residente necesita hacer un número de guardias diferente al objetivo general, puedes especificarlo aquí. Déjalo en blanco para usar el valor por defecto.</span>
+                            </div>
+                        </p>
                          <p class="text-xs text-gray-500">Dejar en blanco para usar el valor por defecto.</p>
                         <div class="flex items-center gap-4"><label class="text-sm">Semana:</label><input type="number" id="individual-target-weekday" placeholder="Defecto" min="0" class="w-24 rounded-md"></div>
                         <div class="flex items-center gap-4"><label class="text-sm">Finde/Feriado:</label><input type="number" id="individual-target-weekend" placeholder="Defecto" min="0" class="w-24 rounded-md"></div>
                     </div>
                     <div id="equity-container" class="space-y-2 p-3 border rounded-md">
-                        <p class="text-sm font-medium">Contadores de Equidad (historial)</p>
+                        <p class="text-sm font-medium flex items-center gap-2">
+                            Contadores de Equidad (historial)
+                            <div class="tooltip tooltip-right">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <span class="tooltiptext">Introduce cuántos Sábados, Domingos y Feriados ha hecho este residente en meses anteriores. El algoritmo usará esto para distribuir los días 'malos' de forma más justa.</span>
+                            </div>
+                        </p>
                         <div class="flex items-center gap-4"><label class="text-sm">Sábados:</label><input type="number" id="saturday-count" min="0" class="w-20 rounded-md"></div>
                         <div class="flex items-center gap-4"><label class="text-sm">Domingos:</label><input type="number" id="sunday-count" min="0" class="w-20 rounded-md"></div>
                         <div class="flex items-center gap-4"><label class="text-sm">Feriados:</label><input type="number" id="holiday-count" min="0" class="w-20 rounded-md"></div>
@@ -283,16 +448,46 @@
                 </div>
                 <div class="space-y-4">
                     <div id="days-preference-section">
-                        <div><label class="block text-sm font-medium">Días preferidos</label><input type="text" id="preferred-days" class="mt-1 block w-full rounded-md"></div>
-                        <div><label class="block text-sm font-medium mt-2">Días a evitar</label><input type="text" id="avoid-days" class="mt-1 block w-full rounded-md"></div>
-                        <div><label class="block text-sm font-medium text-red-700 mt-2">Días bloqueados (Obligatorio)</label><input type="text" id="blocked-days" class="mt-1 block w-full border-red-300 rounded-md"></div>
+                        <div><label class="block text-sm font-medium flex items-center gap-2">
+                            Días preferidos
+                            <div class="tooltip tooltip-left">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <span class="tooltiptext">Días que el residente PREFERIRÍA tener guardia. El algoritmo le dará prioridad, pero no es obligatorio.</span>
+                            </div>
+                        </label><input type="text" id="preferred-days" class="mt-1 block w-full rounded-md"></div>
+                        <div><label class="block text-sm font-medium mt-2 flex items-center gap-2">
+                            Días a evitar
+                            <div class="tooltip tooltip-left">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <span class="tooltiptext">Días que el residente PREFERIRÍA NO tener guardia. El algoritmo intentará evitar asignárselos, pero no es obligatorio.</span>
+                            </div>
+                        </label><input type="text" id="avoid-days" class="mt-1 block w-full rounded-md"></div>
+                        <div><label class="block text-sm font-medium text-red-700 mt-2 flex items-center gap-2">
+                            Días bloqueados (Obligatorio)
+                            <div class="tooltip tooltip-left">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <span class="tooltiptext">¡OBLIGATORIO! Días en los que el residente NO PUEDE hacer guardia bajo ninguna circunstancia (ej. examen, vacaciones).</span>
+                            </div>
+                        </label><input type="text" id="blocked-days" class="mt-1 block w-full border-red-300 rounded-md"></div>
                          <div>
-                        <label class="block text-sm font-medium text-green-700 mt-2">Asignaciones Manuales (Obligatorio)</label>
+                        <label class="block text-sm font-medium text-green-700 mt-2 flex items-center gap-2">
+                            Asignaciones Manuales (Obligatorio)
+                             <div class="tooltip tooltip-left">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <span class="tooltiptext">¡OBLIGATORIO! Días en los que el residente DEBE tener guardia. El algoritmo lo asignará aquí antes que nada.</span>
+                            </div>
+                        </label>
                         <input type="text" id="manual-assignments-input" placeholder="Ej: 5, 12, 23" class="mt-1 block w-full border-green-300 rounded-md shadow-sm">
                     </div>
                     </div>
                     <div id="avoid-residents-section">
-                        <label class="block text-sm font-medium">Evitar trabajar con</label>
+                        <label class="block text-sm font-medium flex items-center gap-2">
+                            Evitar trabajar con
+                             <div class="tooltip tooltip-left">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <span class="tooltiptext">Selecciona residentes con los que esta persona prefiere no compartir guardia. El algoritmo intentará no ponerlos juntos en el mismo día.</span>
+                            </div>
+                        </label>
                         <div id="avoid-residents-checklist" class="mt-1 max-h-32 overflow-y-auto border rounded-md p-2 space-y-1"></div>
                     </div>
                 </div>
@@ -345,10 +540,10 @@
             targetShifts: { weekday: 4, weekend: 2 }
         };
         let currentSchedule = null;
+        let currentDayModalDay = null;
 
         // DOM Elements
         const loginForm = document.getElementById('login-form');
-        // ... (rest of DOM elements are the same)
         const passwordInput = document.getElementById('password-input');
         const errorMessage = document.getElementById('error-message');
         const loginScreen = document.getElementById('login-screen');
@@ -415,8 +610,6 @@
         const dayModalActionSelect = document.getElementById('day-modal-action-select');
         const dayModalSaveBtn = document.getElementById('day-modal-save-btn');
         const dayModalCloseBtn = document.getElementById('day-modal-close-btn');
-        let currentDayModalDay = null;
-
 
         function showToast(message, isError = false) {
             toast.textContent = message;
@@ -1139,10 +1332,7 @@
         generateBtn.addEventListener('click', generateAndDisplaySchedule);
         
         [monthSelect, yearInput].forEach(el => el.addEventListener('change', () => {
-            // **CAMBIO APLICADO AQUÍ**
-            // Se limpian los datos de los turnos del mes anterior
             state.previousMonthShifts = { lastDay: [], secondLastDay: [] };
-            
             updatePreviousMonthInputs();
             renderSlotsCalendar();
             generateAndDisplaySchedule();
@@ -1372,3 +1562,4 @@
     </script>
 </body>
 </html>
+
