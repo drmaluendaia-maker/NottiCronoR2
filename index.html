@@ -21,86 +21,32 @@
         .toast-notification { position: fixed; bottom: 20px; right: 20px; background-color: #2d3748; color: white; padding: 12px 20px; border-radius: 8px; z-index: 100; opacity: 0; transition: opacity 0.3s, transform 0.3s; transform: translateY(20px); }
         .toast-notification.show { opacity: 1; transform: translateY(0); }
         .slot-input { width: 40px; text-align: center; border-radius: 4px; border: 1px solid #ccc; }
-        .swapped-shift { background-color: #e9d5ff !important; color: #5b21b6 !important; }
         .filtered-out { opacity: 0.25; }
         .accordion-content { display: none; }
         .accordion-arrow { transition: transform 0.2s ease-in-out; }
         .accordion-header.active .accordion-arrow { transform: rotate(180deg); }
         
         /* --- Tooltip Styles --- */
-        .tooltip {
-            position: relative;
-            display: inline-block;
-            cursor: help;
-        }
-        .tooltip .tooltiptext {
-            visibility: hidden;
-            width: 240px;
-            background-color: #374151; /* gray-700 */
-            color: #fff;
-            text-align: center; /* Centered text */
-            border-radius: 6px;
-            padding: 8px 12px;
-            position: absolute;
-            z-index: 10;
-            opacity: 0;
-            transition: opacity 0.3s;
-            font-size: 0.75rem; /* text-xs */
-            line-height: 1.4;
-            font-weight: 400;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        .tooltip { position: relative; display: inline-block; cursor: help; }
+        .tooltip .tooltiptext { visibility: hidden; width: 240px; background-color: #374151; color: #fff; text-align: center; border-radius: 6px; padding: 8px 12px; position: absolute; z-index: 10; opacity: 0; transition: opacity 0.3s; font-size: 0.75rem; line-height: 1.4; font-weight: 400; box-shadow: 0 4px 6px rgba(0,0,0,0.1); bottom: 125%; left: 50%; transform: translateX(-50%); }
+        .tooltip:hover .tooltiptext { visibility: visible; opacity: 1; }
+        .tooltip .tooltiptext::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px; border-width: 5px; border-style: solid; border-color: #374151 transparent transparent transparent; }
+        .tooltip-left .tooltiptext { bottom: 50%; right: 125%; left: auto; transform: translateY(50%); }
+        .tooltip-left .tooltiptext::after { top: 50%; left: 100%; right: auto; margin-top: -5px; margin-left: 0; border-color: transparent transparent transparent #374151; }
+        .tooltip-right .tooltiptext { bottom: 50%; left: 125%; transform: translateY(50%); }
+        .tooltip-right .tooltiptext::after { top: 50%; right: 100%; left: auto; margin-top: -5px; margin-left: 0; border-color: transparent #374151 transparent transparent; }
 
-            /* Default position: above the icon */
-            bottom: 125%;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-        .tooltip:hover .tooltiptext {
-            visibility: visible;
-            opacity: 1;
-        }
-        .tooltip .tooltiptext::after {
-            content: "";
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            margin-left: -5px;
-            border-width: 5px;
-            border-style: solid;
-            border-color: #374151 transparent transparent transparent;
-        }
+        /* --- Drag and Drop & Validation Styles --- */
+        .resident-chip { cursor: grab; padding: 2px 4px; }
+        .resident-chip.dragging { opacity: 0.5; cursor: grabbing; }
+        .drag-over { background-color: #dbeafe !important; border: 2px dashed #60a5fa !important; }
+        .successful-swap { background-color: #dcfce7 !important; color: #166534 !important; } /* green */
+        .sandwich-shift { background-color: #fce7f3 !important; color: #9d174d !important; } /* pink */
+        .duplicate-shift { background-color: #fee2e2 !important; color: #991b1b !important; } /* red */
+        .resident-chip-container { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+        .revert-btn { cursor: pointer; color: #b91c1c; font-weight: bold; padding-left: 6px; font-size: 1.1rem; line-height: 1; }
+        .revert-btn:hover { color: #7f1d1d; }
 
-        /* --- Tooltip direction modifiers --- */
-        /* For tooltips needing to show the bubble to the left */
-        .tooltip-left .tooltiptext {
-            bottom: 50%;
-            right: 125%;
-            left: auto;
-            transform: translateY(50%);
-        }
-        .tooltip-left .tooltiptext::after {
-            top: 50%;
-            left: 100%;
-            right: auto;
-            margin-top: -5px;
-            margin-left: 0;
-            border-color: transparent transparent transparent #374151;
-        }
-
-        /* For tooltips needing to show the bubble to the right */
-        .tooltip-right .tooltiptext {
-            bottom: 50%;
-            left: 125%;
-            transform: translateY(50%);
-        }
-        .tooltip-right .tooltiptext::after {
-            top: 50%;
-            right: 100%;
-            left: auto;
-            margin-top: -5px;
-            margin-left: 0;
-            border-color: transparent #374151 transparent transparent;
-        }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800">
@@ -275,38 +221,24 @@
             
             <!-- Acordeones de Gestión -->
             <div class="space-y-4">
-                 <!-- Cambios Puntuales -->
+                 <!-- Cambios Voluntarios -->
                 <div class="bg-white rounded-lg shadow-md">
                     <div class="accordion-header p-4 cursor-pointer flex justify-between items-center">
                         <h3 class="text-lg font-semibold text-gray-700 flex items-center gap-2">
-                            Cambios Voluntarios (1x1)
+                            Cambios Voluntarios (Arrastrar y Soltar)
                             <div class="tooltip">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                <span class="tooltiptext">Registra los cambios de guardia acordados entre residentes. Selecciona quién sale, qué día, y quién entra y qué día. Añade los cambios y luego presiona 'Aplicar'.</span>
+                                <span class="tooltiptext">La forma más fácil de hacer cambios. Simplemente haz clic en el nombre de un residente, arrástralo y suéltalo sobre el nombre de otro para intercambiar sus guardias.</span>
                             </div>
                         </h3>
                         <svg class="accordion-arrow w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </div>
                     <div id="swap-container" class="accordion-content p-4 border-t">
-                        <div class="flex flex-col md:flex-row gap-4">
-                            <div class="w-full md:w-2/3">
-                                <form id="add-swap-form" class="grid grid-cols-2 sm:grid-cols-5 gap-2 items-end">
-                                    <div class="col-span-2 sm:col-span-1"><label class="block text-sm font-medium">Sale:</label><select id="swap-res-out" class="mt-1 block w-full rounded-md"></select></div>
-                                    <div><label class="block text-sm font-medium">Día:</label><input type="number" id="swap-day-out" class="mt-1 block w-full rounded-md"></div>
-                                    <div class="col-span-2 sm:col-span-1"><label class="block text-sm font-medium">Entra:</label><select id="swap-res-in" class="mt-1 block w-full rounded-md"></select></div>
-                                    <div><label class="block text-sm font-medium">Día:</label><input type="number" id="swap-day-in" class="mt-1 block w-full rounded-md"></div>
-                                    <button type="submit" class="col-span-2 sm:col-span-1 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md">Añadir</button>
-                                </form>
-                            </div>
-                            <div class="w-full md:w-1/3">
-                                <h4 class="font-semibold">Pendientes:</h4>
-                                <div id="pending-swaps-list" class="mt-2 space-y-2 max-h-40 overflow-y-auto"></div>
-                                <button id="apply-swaps-btn" class="w-full mt-2 bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-md">Aplicar</button>
-                            </div>
-                        </div>
-                        <div id="applied-swaps-container" class="mt-4 border-t pt-4">
-                             <h4 class="font-semibold">Historial:</h4>
-                             <div id="applied-swaps-list" class="mt-2 space-y-2 max-h-40 overflow-y-auto"></div>
+                        <h4 class="font-semibold text-gray-800">¿Cómo hacer un cambio?</h4>
+                        <p class="text-sm text-gray-600 mt-2">Simplemente arrastra el nombre de un residente desde su día de guardia y suéltalo sobre el nombre de otro residente en un día diferente. El sistema intercambiará sus guardias automáticamente.</p>
+                        <div class="mt-4 border-t pt-4">
+                             <h4 class="font-semibold">Historial de Cambios:</h4>
+                             <div id="drag-swaps-list" class="mt-2 space-y-2 max-h-40 overflow-y-auto"></div>
                         </div>
                     </div>
                 </div>
@@ -533,9 +465,9 @@
             logo: null,
             daySlots: {},
             previousMonthShifts: { lastDay: [], secondLastDay: [] },
-            pendingSwaps: [],
-            appliedSwaps: [],
-            swappedShifts: [],
+            dragSwaps: [],
+            highlights: {},
+            lastInvalidSwap: null,
             filteredResidents: [],
             targetShifts: { weekday: 4, weekend: 2 }
         };
@@ -568,14 +500,6 @@
         const groupMembersChecklist = document.getElementById('group-members-checklist');
         const createGroupBtn = document.getElementById('create-group-btn');
         const groupsDisplay = document.getElementById('groups-display');
-        const addSwapForm = document.getElementById('add-swap-form');
-        const swapResOutSelect = document.getElementById('swap-res-out');
-        const swapDayOutInput = document.getElementById('swap-day-out');
-        const swapResInSelect = document.getElementById('swap-res-in');
-        const swapDayInInput = document.getElementById('swap-day-in');
-        const pendingSwapsList = document.getElementById('pending-swaps-list');
-        const applySwapsBtn = document.getElementById('apply-swaps-btn');
-        const appliedSwapsList = document.getElementById('applied-swaps-list');
         const addResidentForm = document.getElementById('add-resident-form');
         const newResidentNameInput = document.getElementById('new-resident-name');
         const residentList = document.getElementById('resident-list');
@@ -619,21 +543,21 @@
         }
 
         function saveState() {
-            localStorage.setItem('residentSchedulerState_v10', JSON.stringify(state));
+            localStorage.setItem('residentSchedulerState_v11_dnd', JSON.stringify(state));
         }
 
         function loadState() {
-            const savedState = localStorage.getItem('residentSchedulerState_v10');
+            const savedState = localStorage.getItem('residentSchedulerState_v11_dnd');
             if (savedState) {
                 const loaded = JSON.parse(savedState);
-                loaded.pendingSwaps = [];
-                loaded.appliedSwaps = [];
-                loaded.swappedShifts = [];
                 loaded.filteredResidents = [];
+                if (!loaded.dragSwaps) loaded.dragSwaps = [];
+                if (!loaded.highlights) loaded.highlights = {};
+                if (!loaded.lastInvalidSwap) loaded.lastInvalidSwap = null;
+                
                 if (!loaded.targetShifts) {
                     loaded.targetShifts = { weekday: 4, weekend: 2 };
                 }
-                // Ensure backward compatibility for individual target shifts
                 if(loaded.residents) {
                     loaded.residents.forEach(r => {
                         if(!r.targetShifts) {
@@ -685,7 +609,6 @@
             renderGroupChecklist();
             renderGroupsList();
             renderSlotsCalendar();
-            populateSwapSelects();
             renderQuickFilter();
             generateAndDisplaySchedule();
         }
@@ -707,12 +630,9 @@
         }
 
         function generateAndDisplaySchedule() {
-            state.pendingSwaps = [];
-            state.appliedSwaps = [];
-            state.swappedShifts = [];
-            renderPendingSwaps();
-            renderAppliedSwaps();
-
+            state.highlights = {};
+            state.lastInvalidSwap = null;
+            state.dragSwaps = [];
             const year = parseInt(yearInput.value);
             const month = parseInt(monthSelect.value);
             state.holidays = holidaysInput.value.split(',').map(s => parseInt(s.trim())).filter(Boolean);
@@ -732,6 +652,7 @@
                 renderCalendar(result.schedule, year, month);
                 recalculateStatsAndUpdateUI(result.schedule);
             }
+            renderDragSwapsHistory();
         }
         
         function generateSchedule(year, month) {
@@ -905,7 +826,7 @@
             for (let day = 1; day <= daysInMonth; day++) {
                 const date = new Date(year, month, day);
                 const dayOfWeek = date.getDay();
-                let classes = 'border rounded-lg p-1 sm:p-2 min-h-[80px] sm:min-h-[120px] flex flex-col cursor-pointer hover:bg-gray-100';
+                let classes = 'border rounded-lg p-1 sm:p-2 min-h-[80px] sm:min-h-[120px] flex flex-col';
                 if (state.holidays.includes(day)) classes += ' holiday-day';
                 else if (dayOfWeek === 0 || dayOfWeek === 6) classes += ' weekend-day';
                 
@@ -913,14 +834,32 @@
                 dayCell.className = classes;
                 dayCell.dataset.day = day;
                 const residentsOnDay = (schedule[day] || []).map(name => {
-                    const isSwapped = state.swappedShifts.some(s => s.day === day && s.residentName === name);
                     const isFiltered = state.filteredResidents.length > 0 && !state.filteredResidents.includes(name);
-                    let liClass = isSwapped ? 'swapped-shift rounded px-1' : 'bg-blue-100 text-blue-800 rounded px-1';
+                    let liClass = 'resident-chip';
+                    let content = `<span>${name}</span>`;
+
+                    const dayHighlights = state.highlights[day] || [];
+                    const highlight = dayHighlights.find(h => h.residentName === name);
+
+                    if (highlight) {
+                        if (highlight.type === 'duplicate') {
+                            liClass += ' duplicate-shift';
+                            content = `<div class="resident-chip-container"><span>${name}</span><span class="revert-btn" title="Revertir último cambio inválido">×</span></div>`;
+                        } else if (highlight.type === 'sandwich') {
+                            liClass += ' sandwich-shift';
+                        } else if (highlight.type === 'success') {
+                            liClass += ' successful-swap';
+                        }
+                    } else {
+                        liClass += ' bg-blue-100 text-blue-800'; // Default
+                    }
+                    
                     if (isFiltered) liClass += ' filtered-out';
-                    return `<li class="${liClass}">${name}</li>`;
+                    
+                    return `<li class="${liClass}" draggable="true" data-resident-name="${name}" data-day="${day}">${content}</li>`;
                 }).join('');
-                dayCell.innerHTML = `<div class="font-bold text-sm">${day}</div><ul class="text-xs mt-1 space-y-1">${residentsOnDay}</ul>`;
-                dayCell.addEventListener('click', () => openDayModal(day));
+                dayCell.innerHTML = `<div class="font-bold text-sm cursor-pointer hover:text-blue-600">${day}</div><ul class="text-xs mt-1 space-y-1">${residentsOnDay}</ul>`;
+                dayCell.querySelector('div.font-bold').addEventListener('click', () => openDayModal(day));
                 calendarGrid.appendChild(dayCell);
             }
         }
@@ -1127,31 +1066,29 @@
             dayModal.style.display = 'none';
         }
         
-        function populateSwapSelects() {
-            const options = state.residents.map(r => `<option value="${r.name}">${r.name}</option>`).join('');
-            swapResOutSelect.innerHTML = options;
-            swapResInSelect.innerHTML = options;
+        function renderDragSwapsHistory() {
+            const list = document.getElementById('drag-swaps-list');
+            if (list) {
+                if (state.dragSwaps && state.dragSwaps.length > 0) {
+                    list.innerHTML = state.dragSwaps.map(swap => {
+                        let statusClass = '';
+                        if (swap.status === 'success') {
+                            statusClass = 'successful-swap';
+                        } else if (swap.status === 'sandwich') {
+                            statusClass = 'sandwich-shift';
+                        }
+                        return `
+                            <div class="text-xs p-1 rounded ${statusClass}">
+                                <span>Intercambio: <b>${swap.res1Name}</b> (día ${swap.res1Day}) con <b>${swap.res2Name}</b> (día ${swap.res2Day})</span>
+                            </div>`;
+                    }).join('');
+                } else {
+                    list.innerHTML = '<p class="text-xs text-gray-500">No se han realizado cambios.</p>';
+                }
+            }
         }
         
-        function renderPendingSwaps() {
-            pendingSwapsList.innerHTML = state.pendingSwaps.map((swap, index) => `
-                <div class="text-xs p-1 bg-gray-100 rounded flex justify-between items-center">
-                    <span>${swap.resOutName} (d${swap.dayOut}) ↔ ${swap.resInName} (d${swap.dayIn})</span>
-                    <button data-index="${index}" class="text-red-500 font-bold px-2">X</button>
-                </div>
-            `).join('');
-        }
-        
-        function renderAppliedSwaps() {
-             appliedSwapsList.innerHTML = state.appliedSwaps.map((swap, index) => `
-                <div class="text-xs p-1 bg-gray-100 rounded flex justify-between items-center">
-                    <span>${swap.resOutName} (d${swap.dayOut}) ↔ ${swap.resInName} (d${swap.dayIn})</span>
-                    <button data-index="${index}" class="text-blue-500 font-bold px-2 revert-swap-btn">Revertir</button>
-                </div>
-            `).join('');
-        }
-        
-        function recalculateStatsAndUpdateUI(schedule) {
+        function recalculateStatsAndUpdateUI(schedule, shouldRender = true) {
             const newStats = JSON.parse(JSON.stringify(state.residents.filter(r => r.status === 'active')));
             newStats.forEach(r => { r.shifts = []; r.weekdayCount = 0; r.weekendCount = 0; });
             for (const day in schedule) {
@@ -1168,66 +1105,59 @@
                 });
             }
             currentSchedule.stats = newStats;
-            renderSummary(newStats);
-            runValidations(schedule, newStats);
-            renderCriteriaSummary();
+            if(shouldRender){
+                renderSummary(newStats);
+                runValidations(schedule, newStats);
+                renderCriteriaSummary();
+            }
         }
 
-        function handleSwap() {
-            if (!currentSchedule || currentSchedule.error) {
-                showToast('Primero genera un cronograma válido.', true);
-                return;
-            }
-            if (state.pendingSwaps.length === 0) {
-                showToast('Añade al menos un cambio a la lista.', true);
-                return;
-            }
-            
+        function addHighlight(day, residentName, type) {
+            if (!state.highlights[day]) state.highlights[day] = [];
+            state.highlights[day].push({ residentName, type });
+        }
+
+        function validateSwap(sourceResName, sourceDay, targetResName, targetDay) {
+            state.highlights = {};
+            state.lastInvalidSwap = null;
+            let isSandwich = false;
             const schedule = currentSchedule.schedule;
-            const swapsToApply = [...state.pendingSwaps];
-            state.pendingSwaps = [];
-            
-            swapsToApply.forEach(swap => {
-                const { resOutName, dayOut, resInName, dayIn } = swap;
-                const outDaySchedule = schedule[dayOut] || [];
-                const inDaySchedule = schedule[dayIn] || [];
 
-                if (!outDaySchedule.includes(resOutName) || !inDaySchedule.includes(resInName)) {
-                    showToast(`Cambio inválido: ${resOutName} (d${dayOut}) ↔ ${resInName} (d${dayIn}). Verifica las guardias.`, true);
-                    return;
-                }
-
-                schedule[dayOut] = outDaySchedule.filter(name => name !== resOutName).concat(resInName);
-                schedule[dayIn] = inDaySchedule.filter(name => name !== resInName).concat(resOutName);
+            // 1. Check for duplicates (critical error)
+            if (schedule[sourceDay].filter(r => r === targetResName).length > 1 || schedule[targetDay].filter(r => r === sourceResName).length > 1) {
+                if (schedule[sourceDay].filter(r => r === targetResName).length > 1) addHighlight(sourceDay, targetResName, 'duplicate');
+                if (schedule[targetDay].filter(r => r === sourceResName).length > 1) addHighlight(targetDay, sourceResName, 'duplicate');
                 
-                state.appliedSwaps.push(swap);
-                state.swappedShifts.push({day: dayOut, residentName: resInName}, {day: dayIn, residentName: resOutName});
-            });
-            
-            recalculateStatsAndUpdateUI(schedule);
+                state.lastInvalidSwap = { res1Name: sourceResName, res1Day: sourceDay, res2Name: targetResName, res2Day: targetDay };
+                showToast('Error: Un residente no puede estar dos veces el mismo día.', true);
+                return 'duplicate';
+            }
 
-            // Validar sandwich post-cambio
-            swapsToApply.forEach(swap => {
-                const resOut = currentSchedule.stats.find(r => r.name === swap.resOutName);
-                const resIn = currentSchedule.stats.find(r => r.name === swap.resInName);
-                [resOut, resIn].forEach(res => {
-                    if(!res) return;
-                    const shifts = res.shifts.map(s => s.day).sort((a,b)=>a-b);
-                    for(let i = 0; i < shifts.length - 1; i++) {
-                        if (shifts[i+1] - shifts[i] <= MIN_REST_DAYS) {
-                            showToast(`Advertencia: El cambio crea guardia sándwich para ${res.name} (días ${shifts[i]}, ${shifts[i+1]})`, true);
-                        }
+            // 2. Check for sandwich shifts (warning)
+            const residentsToCheck = [sourceResName, targetResName];
+            residentsToCheck.forEach(resName => {
+                const resShifts = currentSchedule.stats.find(r => r.name === resName)?.shifts.map(s => s.day).sort((a,b)=>a-b);
+                if (!resShifts) return;
+
+                for (let i = 0; i < resShifts.length - 1; i++) {
+                    if (resShifts[i+1] - resShifts[i] <= MIN_REST_DAYS) {
+                        isSandwich = true;
+                        addHighlight(resShifts[i], resName, 'sandwich');
+                        addHighlight(resShifts[i+1], resName, 'sandwich');
                     }
-                });
+                }
             });
 
-            renderPendingSwaps();
-            renderAppliedSwaps();
-            renderCalendar(schedule, parseInt(yearInput.value), parseInt(monthSelect.value));
-            saveState();
-            showToast('Cambios aplicados.');
+            if(isSandwich) {
+                showToast('Advertencia: El cambio genera una guardia sándwich.', true);
+                return 'sandwich';
+            } 
+            
+            // 3. If no errors, it's a success
+            addHighlight(sourceDay, targetResName, 'success');
+            addHighlight(targetDay, sourceResName, 'success');
+            return 'success';
         }
-        
         function handleICalExport() {
             if (!currentSchedule || currentSchedule.error) {
                 showToast('Genera un cronograma válido antes de exportar.', true);
@@ -1274,7 +1204,10 @@
                 holidays: state.holidays,
                 daySlots: state.daySlots,
                 previousMonthShifts: state.previousMonthShifts,
-                targetShifts: state.targetShifts
+                targetShifts: state.targetShifts,
+                dragSwaps: state.dragSwaps,
+                highlights: state.highlights,
+                lastInvalidSwap: state.lastInvalidSwap
             };
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(configToExport, null, 2));
             const downloadAnchorNode = document.createElement('a');
@@ -1303,6 +1236,9 @@
                         state.daySlots = importedConfig.daySlots || {};
                         state.previousMonthShifts = importedConfig.previousMonthShifts || { lastDay: [], secondLastDay: [] };
                         state.targetShifts = importedConfig.targetShifts || { weekday: 4, weekend: 2};
+                        state.dragSwaps = importedConfig.dragSwaps || [];
+                        state.highlights = importedConfig.highlights || {};
+                        state.lastInvalidSwap = importedConfig.lastInvalidSwap || null;
                         saveState();
                         refreshUIFromState();
                         showToast('Configuración importada exitosamente.');
@@ -1317,6 +1253,8 @@
             importConfigInput.value = ''; // Reset input
         }
 
+
+        // --- Event Listeners ---
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
             if (passwordInput.value === CORRECT_PASSWORD) {
@@ -1330,28 +1268,14 @@
         });
         
         generateBtn.addEventListener('click', generateAndDisplaySchedule);
-        
         [monthSelect, yearInput].forEach(el => el.addEventListener('change', () => {
             state.previousMonthShifts = { lastDay: [], secondLastDay: [] };
             updatePreviousMonthInputs();
             renderSlotsCalendar();
             generateAndDisplaySchedule();
         }));
-        
-        targetWeekdayShiftsInput.addEventListener('change', (e) => {
-            state.targetShifts.weekday = parseInt(e.target.value) || 0;
-            saveState();
-            showToast('Objetivo de guardias de semana actualizado.');
-            generateAndDisplaySchedule();
-        });
-
-        targetWeekendShiftsInput.addEventListener('change', (e) => {
-            state.targetShifts.weekend = parseInt(e.target.value) || 0;
-            saveState();
-            showToast('Objetivo de guardias de fin de semana actualizado.');
-            generateAndDisplaySchedule();
-        });
-
+        targetWeekdayShiftsInput.addEventListener('change', (e) => { state.targetShifts.weekday = parseInt(e.target.value) || 0; saveState(); showToast('Objetivo de guardias de semana actualizado.'); generateAndDisplaySchedule(); });
+        targetWeekendShiftsInput.addEventListener('change', (e) => { state.targetShifts.weekend = parseInt(e.target.value) || 0; saveState(); showToast('Objetivo de guardias de fin de semana actualizado.'); generateAndDisplaySchedule(); });
         slotsCalendarGrid.addEventListener('change', (e) => {
             if (e.target.classList.contains('slot-input')) {
                 const day = e.target.dataset.day;
@@ -1364,7 +1288,6 @@
                 saveState();
             }
         });
-        
         createGroupBtn.addEventListener('click', () => {
             const name = groupNameInput.value.trim();
             const members = Array.from(groupMembersChecklist.querySelectorAll('input:checked')).map(cb => parseInt(cb.value));
@@ -1387,7 +1310,6 @@
                 showToast('Grupo eliminado.');
             }
         });
-
         addResidentForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const newName = newResidentNameInput.value.trim();
@@ -1409,125 +1331,132 @@
                 showToast('El nombre no puede estar vacío o ya existe.', true);
             }
         });
-
         residentList.addEventListener('click', (e) => {
             if(e.target.classList.contains('delete-resident-btn')) {
                 const resId = parseInt(e.target.dataset.id);
                 state.residents = state.residents.filter(r => r.id !== resId);
-                state.groups.forEach(group => {
-                    group.members = group.members.filter(id => id !== resId);
-                });
+                state.groups.forEach(group => { group.members = group.members.filter(id => id !== resId); });
                 state.groups = state.groups.filter(group => group.members.length > 1);
-
                 saveState();
                 refreshUIFromState();
                 showToast('Residente eliminado.');
             }
         });
-        
         logoUpload.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = (event) => {
-                    state.logo = event.target.result;
-                    saveState();
-                    showToast('Logo cargado.');
-                };
+                reader.onload = (event) => { state.logo = event.target.result; saveState(); showToast('Logo cargado.'); };
                 reader.readAsDataURL(file);
             }
         });
-
         modalSaveBtn.addEventListener('click', savePreferences);
         modalCloseBtn.addEventListener('click', () => prefModal.style.display = 'none');
         residentStatusSelect.addEventListener('change', (e) => toggleModalSections(e.target.value));
-        
         dayModalSaveBtn.addEventListener('click', saveDayPreference);
         dayModalCloseBtn.addEventListener('click', () => dayModal.style.display = 'none');
-        
-        addSwapForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            state.pendingSwaps.push({
-                resOutName: swapResOutSelect.value,
-                dayOut: parseInt(swapDayOutInput.value),
-                resInName: swapResInSelect.value,
-                dayIn: parseInt(swapDayInInput.value)
-            });
-            renderPendingSwaps();
-            addSwapForm.reset();
-        });
-        
-        pendingSwapsList.addEventListener('click', (e) => {
-            if (e.target.tagName === 'BUTTON') {
-                state.pendingSwaps.splice(e.target.dataset.index, 1);
-                renderPendingSwaps();
-            }
-        });
-        
-        appliedSwapsList.addEventListener('click', (e) => {
-            if (e.target.classList.contains('revert-swap-btn')) {
-                const index = parseInt(e.target.dataset.index);
-                const swapToRevert = state.appliedSwaps[index];
-                
-                const { resOutName, dayOut, resInName, dayIn } = swapToRevert;
-                const schedule = currentSchedule.schedule;
-                schedule[dayOut] = schedule[dayOut].filter(name => name !== resInName).concat(resOutName);
-                schedule[dayIn] = schedule[dayIn].filter(name => name !== resOutName).concat(resInName);
-
-                state.swappedShifts = state.swappedShifts.filter(s => 
-                    !(s.day === dayOut && s.residentName === resInName) && 
-                    !(s.day === dayIn && s.residentName === resOutName)
-                );
-                
-                state.appliedSwaps.splice(index, 1);
-                renderAppliedSwaps();
-                renderCalendar(schedule, parseInt(yearInput.value), parseInt(monthSelect.value));
-                recalculateStatsAndUpdateUI(schedule);
-                saveState();
-                showToast('Cambio revertido.');
-            }
-        });
-
-        applySwapsBtn.addEventListener('click', handleSwap);
-        
         residentQuickFilter.addEventListener('click', (e) => {
             if (e.target.tagName === 'BUTTON') {
                 const residentName = e.target.dataset.residentName;
                 const index = state.filteredResidents.indexOf(residentName);
-                if (index > -1) {
-                    state.filteredResidents.splice(index, 1);
-                } else {
-                    state.filteredResidents.push(residentName);
-                }
-                renderQuickFilter(); // Re-render chips to update styles
-                if(currentSchedule && !currentSchedule.error) {
-                    renderCalendar(currentSchedule.schedule, parseInt(yearInput.value), parseInt(monthSelect.value));
-                }
+                if (index > -1) { state.filteredResidents.splice(index, 1); } else { state.filteredResidents.push(residentName); }
+                renderQuickFilter();
+                if(currentSchedule && !currentSchedule.error) { renderCalendar(currentSchedule.schedule, parseInt(yearInput.value), parseInt(monthSelect.value)); }
             }
         });
 
+        // --- Drag & Drop and Revert Logic ---
+        let draggedItem = null;
+        calendarGrid.addEventListener('dragstart', e => {
+            if (e.target.classList.contains('resident-chip')) {
+                draggedItem = e.target;
+                setTimeout(() => { e.target.classList.add('dragging'); }, 0);
+            }
+        });
+        calendarGrid.addEventListener('dragend', e => {
+            if(draggedItem) {
+                draggedItem.classList.remove('dragging');
+                draggedItem = null;
+            }
+        });
+        calendarGrid.addEventListener('dragover', e => {
+            e.preventDefault();
+            const targetCell = e.target.closest('[data-day]');
+            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+            if (targetCell) {
+                targetCell.classList.add('drag-over');
+            }
+        });
+        calendarGrid.addEventListener('dragleave', e => {
+            e.target.closest('[data-day]')?.classList.remove('drag-over');
+        });
+        calendarGrid.addEventListener('drop', e => {
+            e.preventDefault();
+            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+            const dropTarget = e.target.closest('.resident-chip');
+            if (!dropTarget || !draggedItem || dropTarget === draggedItem) { return; }
+            
+            const sourceResName = draggedItem.dataset.residentName;
+            const sourceDay = parseInt(draggedItem.dataset.day);
+            const targetResName = dropTarget.dataset.residentName;
+            const targetDay = parseInt(dropTarget.dataset.day);
+
+            if (sourceDay === targetDay) return;
+
+            const schedule = currentSchedule.schedule;
+            const sourceDayIndex = schedule[sourceDay].indexOf(sourceResName);
+            const targetDayIndex = schedule[targetDay].indexOf(targetResName);
+            
+            if (sourceDayIndex > -1 && targetDayIndex > -1) {
+                schedule[sourceDay][sourceDayIndex] = targetResName;
+                schedule[targetDay][targetDayIndex] = sourceResName;
+            }
+
+            recalculateStatsAndUpdateUI(schedule, false);
+            const swapStatus = validateSwap(sourceResName, sourceDay, targetResName, targetDay);
+
+            if (swapStatus !== 'duplicate') {
+                state.dragSwaps.push({ res1Name: sourceResName, res1Day: sourceDay, res2Name: targetResName, res2Day: targetDay, status: swapStatus });
+            }
+            
+            renderCalendar(schedule, parseInt(yearInput.value), parseInt(monthSelect.value));
+            recalculateStatsAndUpdateUI(schedule); 
+            renderDragSwapsHistory();
+            saveState();
+        });
+        calendarGrid.addEventListener('click', e => {
+            if (e.target.classList.contains('revert-btn')) {
+                if (!state.lastInvalidSwap) return;
+
+                const { res1Name, res1Day, res2Name, res2Day } = state.lastInvalidSwap;
+                const schedule = currentSchedule.schedule;
+                
+                // Revert the swap
+                const currentRes1Index = schedule[res2Day].indexOf(res1Name);
+                if (currentRes1Index > -1) schedule[res2Day][currentRes1Index] = res2Name;
+                
+                const currentRes2Index = schedule[res1Day].indexOf(res2Name);
+                if (currentRes2Index > -1) schedule[res1Day][currentRes2Index] = res1Name;
+
+                state.highlights = {};
+                state.lastInvalidSwap = null;
+                
+                renderCalendar(schedule, parseInt(yearInput.value), parseInt(monthSelect.value));
+                recalculateStatsAndUpdateUI(schedule);
+                saveState();
+                showToast('Cambio inválido revertido.');
+            }
+        });
+        
         exportIcalBtn.addEventListener('click', handleICalExport);
         exportConfigBtn.addEventListener('click', handleExportConfig);
         importConfigInput.addEventListener('change', handleImportConfig);
-        
-        exportPngBtn.addEventListener('click', () => {
-            html2canvas(document.getElementById('schedule-container'), {scale: 2}).then(canvas => {
-                const link = document.createElement('a');
-                link.download = `cronograma.png`;
-                link.href = canvas.toDataURL();
-                link.click();
-            });
-        });
-
+        exportPngBtn.addEventListener('click', () => { html2canvas(document.getElementById('schedule-container'), {scale: 2}).then(canvas => { const link = document.createElement('a'); link.download = `cronograma.png`; link.href = canvas.toDataURL(); link.click(); }); });
         exportPdfBtn.addEventListener('click', () => {
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
             const scheduleElement = document.getElementById('schedule-container');
-
-            if (state.logo) {
-                pdf.addImage(state.logo, 'PNG', 10, 5, 30, 15);
-            }
-
+            if (state.logo) { pdf.addImage(state.logo, 'PNG', 10, 5, 30, 15); }
             html2canvas(scheduleElement, { scale: 2 }).then(canvas => {
                 const imgData = canvas.toDataURL('image/png');
                 const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -1535,12 +1464,8 @@
                 const ratio = canvas.width / canvas.height;
                 let imgWidth = pdfWidth - 20;
                 let imgHeight = imgWidth / ratio;
-                if (imgHeight > pdfHeight - 40) {
-                    imgHeight = pdfHeight - 40;
-                    imgWidth = imgHeight * ratio;
-                }
+                if (imgHeight > pdfHeight - 40) { imgHeight = pdfHeight - 40; imgWidth = imgHeight * ratio; }
                 pdf.addImage(imgData, 'PNG', 10, 25, imgWidth, imgHeight);
-                
                 if (includeSummaryPdf.checked) {
                     pdf.addPage();
                     pdf.setFontSize(16);
