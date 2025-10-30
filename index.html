@@ -766,13 +766,15 @@
                     score -= 5000; // Penalización baja por exceso de semana
                 }
                 
+                // *** CAMBIO REALIZADO ***
                 // Penalización Fuerte por exceso de finde/feriado
                 if (slot.type === 'weekend' && res.weekendCount >= targetWeekend) {
-                    score -= 40000; 
+                    score -= 200000; // MODIFICADO: Aumentada la penalización para priorizar balance de findes
                 }
                 
+                // *** CAMBIO REALIZADO ***
                 // Prioridad 3: Descanso (más días desde la última guardia es mejor)
-                score += (slot.day - res.lastShiftDay) * 1000;
+                score += (slot.day - res.lastShiftDay) * 100; // MODIFICADO: Reducida la bonificación para que no supere al balance
                 
                 // Prioridad 4: Preferencias y Grupos
                 if (res.preferences.preferred.includes(slot.day)) score += 500;
@@ -1636,4 +1638,3 @@
     </script>
 </body>
 </html>
-
