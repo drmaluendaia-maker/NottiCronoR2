@@ -68,7 +68,7 @@
     <main id="app-container">
         <div class="container mx-auto p-4 sm:p-6 lg:p-8">
             <header class="text-center mb-8">
-                <img src="notti.png" alt="Logo Hospital Notti" class="h-20 mx-auto mb-4">
+                <img src="notti.png" alt="Logo Hospital Notti" class="h-20 mx-auto mb-4" onerror="this.style.display='none'">
                 <h1 class="text-2xl sm:text-3xl font-bold text-blue-800">Generador de Cronogramas PRO</h1>
                 <p class="text-md text-gray-600 mt-1">Hospital Notti - Pediatría</p>
             </header>
@@ -79,6 +79,12 @@
                     <div><label for="month-select" class="block text-sm font-medium">Mes:</label><select id="month-select" class="mt-1 block w-full rounded-md"></select></div>
                     <div><label for="year-input" class="block text-sm font-medium">Año:</label><input type="number" id="year-input" value="2025" class="mt-1 block w-full rounded-md"></div>
                     <button id="generate-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md">Generar Cronograma</button>
+                </div>
+                <!-- NUEVO: Contador de Cupos -->
+                <div id="slot-counter-display" class="mt-4 pt-4 border-t border-gray-200 text-center">
+                    <span class="text-sm font-medium text-gray-700">Cupos Totales del Mes: </span>
+                    <span class="text-sm ml-2">Semana: <b id="weekday-slot-count" class="text-blue-600 text-base">0</b></span>
+                    <span class="text-sm ml-4">Finde/Feriado: <b id="weekend-slot-count" class="text-red-600 text-base">0</b></span>
                 </div>
             </div>
 
@@ -533,6 +539,10 @@
         const dayModalActionSelect = document.getElementById('day-modal-action-select');
         const dayModalSaveBtn = document.getElementById('day-modal-save-btn');
         const dayModalCloseBtn = document.getElementById('day-modal-close-btn');
+        // NUEVO: Contadores de cupos
+        const weekdaySlotCountEl = document.getElementById('weekday-slot-count');
+        const weekendSlotCountEl = document.getElementById('weekend-slot-count');
+
 
         function showToast(message, isError = false) {
             toast.textContent = message;
@@ -566,6 +576,7 @@
                 }
                 Object.assign(state, loaded);
             } else {
+                // Fallback state if nothing is in localStorage
                 state.residents = ["Luchi", "Fer", "Regi", "Agos", "Cami", "Agus", "Clara", "Mati", "Celmi", "Sabri", "Tati", "Jessi", "Ro", "Vale G", "Lule", "Coti", "Santi", "Dai", "Mile"].map((name, i) => ({
                     id: i, name, status: 'active',
                     preferences: { preferred: [], avoid: [] },
@@ -574,12 +585,6 @@
                     manualAssignments: [],
                     targetShifts: { weekday: null, weekend: null }
                 }));
-                const sept2025Key = '2025-8';
-                state.daySlots[sept2025Key] = {
-                    1: 2, 2: 3, 3: 3, 4: 3, 5: 2, 6: 3, 7: 4, 8: 2, 9: 3, 10: 3, 11: 3, 12: 2, 13: 3, 14: 3,
-                    15: 3, 16: 3, 17: 3, 18: 2, 19: 2, 20: 3, 21: 4, 22: 2, 23: 3, 24: 3, 25: 2, 26: 2, 27: 3, 28: 3,
-                    29: 3, 30: 2
-                };
             }
         }
 
@@ -587,8 +592,13 @@
             loadState();
             const monthNames = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
             monthSelect.innerHTML = monthNames.map((m, i) => `<option value="${i}">${m}</option>`).join('');
-            monthSelect.value = 8;
-            yearInput.value = 2025;
+            
+            // Establecer el mes de Noviembre (índice 10) por defecto
+            const defaultMonth = 10;
+            const defaultYear = 2025;
+            monthSelect.value = defaultMonth;
+            yearInput.value = defaultYear;
+            
             document.querySelectorAll('.accordion-header').forEach(header => {
                 header.addEventListener('click', () => {
                     header.classList.toggle('active');
@@ -609,6 +619,7 @@
             renderGroupsList();
             renderSlotsCalendar();
             renderQuickFilter();
+            updateSlotCounters(); // NUEVO: Actualizar contadores al cargar
             generateAndDisplaySchedule();
         }
 
@@ -639,6 +650,7 @@
             state.previousMonthShifts.secondLastDay = secondLastDayShiftsInput.value.split(',').map(s => s.trim()).filter(Boolean);
             saveState();
             
+            updateSlotCounters(); // NUEVO: Actualizar contadores antes de generar
             calendarTitle.textContent = `Cronograma para ${monthSelect.options[month].text} de ${year}`;
             const result = generateSchedule(year, month);
             currentSchedule = result; 
@@ -677,6 +689,7 @@
                 }
             }
 
+            // Asignaciones Manuales
             for (const res of residents) {
                 for (const day of res.manualAssignments) {
                     if (res.lastShiftDay > day - (MIN_REST_DAYS + 1)) {
@@ -693,6 +706,7 @@
                 }
             }
 
+            // Asignación principal
             for (const slot of slots.filter(s => !s.resident)) {
                 const bestResident = findBestResident(slot, residents, slots, year, month);
                 if (!bestResident) {
@@ -727,27 +741,54 @@
             candidates.forEach(res => {
                 let score = 0;
                 const residentData = state.residents.find(r => r.id === res.id);
+                
+                // Prioridad 1: Balance total de guardias
                 const targetWeekday = residentData.targetShifts.weekday ?? state.targetShifts.weekday;
                 const targetWeekend = residentData.targetShifts.weekend ?? state.targetShifts.weekend;
-
-                if (slot.type === 'weekday' && res.weekdayCount >= targetWeekday) score -= 50000;
-                if (slot.type === 'weekend' && res.weekendCount >= targetWeekend) score -= 50000;
-
+                const totalTarget = targetWeekday + targetWeekend;
+                
+                // Penalización altísima si ya alcanzó o superó el total de guardias
+                if (res.shifts.length >= totalTarget) {
+                    const totalSlots = allSlots.length;
+                    const avgShifts = totalSlots / residents.length;
+                    // Solo penalizar si el número de guardias supera el promedio (para casos de 97+ cupos)
+                    if (res.shifts.length >= Math.ceil(avgShifts)) {
+                         score -= 100000; // Penalización máxima si ya está en el tope
+                    } else {
+                         score -= 50000; // Penalización media si está en el target pero no en el tope
+                    }
+                }
+                // Penalización menor por cada guardia que ya tiene, para elegir al que menos tiene
                 score -= res.shifts.length * 10000;
+
+                // Prioridad 2: Balance de tipo de guardia (penalización más baja)
+                if (slot.type === 'weekday' && res.weekdayCount >= targetWeekday) {
+                    score -= 5000; // Penalización baja por exceso de semana
+                }
+                
+                // Penalización Fuerte por exceso de finde/feriado
+                if (slot.type === 'weekend' && res.weekendCount >= targetWeekend) {
+                    score -= 40000; 
+                }
+                
+                // Prioridad 3: Descanso (más días desde la última guardia es mejor)
                 score += (slot.day - res.lastShiftDay) * 1000;
+                
+                // Prioridad 4: Preferencias y Grupos
                 if (res.preferences.preferred.includes(slot.day)) score += 500;
                 if (res.preferences.avoid.includes(slot.day)) score -= 500;
                 
                 state.groups.forEach(group => {
                     if (group.members.includes(res.id) && group.members.some(id => residentsOnSameDay.includes(id))) {
-                        score += 10000;
+                        score += 10000; // Bonus de grupo
                     }
                 });
 
                 if (residentsOnSameDay.some(id => res.avoidResidents.includes(id)) || residentsOnSameDay.some(id => state.residents.find(r=>r.id===id).avoidResidents.includes(res.id))) {
-                    score -= 10000;
+                    score -= 10000; // Penalización de evitación
                 }
                 
+                // Prioridad 5: Equidad de findes/feriados (más baja)
                 const date = new Date(year, month, slot.day);
                 const dayOfWeek = date.getDay();
                 if (state.holidays.includes(slot.day)) score -= res.equity.holidays * 50;
@@ -760,6 +801,41 @@
             return candidates.sort((a, b) => b.score - a.score)[0];
         }
         
+        // Validación de Balance
+        function runBalanceValidations(stats) {
+            const activeStats = stats.filter(s => state.residents.find(r => r.id === s.id)?.status === 'active');
+            if (activeStats.length === 0) return;
+
+            // 1. Chequear balance de guardias totales
+            const totalShifts = activeStats.map(s => s.weekdayCount + s.weekendCount);
+            const minShifts = Math.min(...totalShifts);
+            const maxShifts = Math.max(...totalShifts);
+            const totalBalanceError = maxShifts - minShifts > 1;
+            
+            validationList.innerHTML += `<div class="flex items-center">${!totalBalanceError ? '<span class="text-green-500 mr-2">✔️</span>' : '<span class="text-red-500 mr-2">❌</span>'} Balance total de guardias equitativo (Max ${maxShifts}, Min ${minShifts}). ${totalBalanceError ? `<span class="text-red-500 text-xs ml-2">(Diferencia mayor a 1)</span>` : ''}</div>`;
+
+            // 2. Chequear balance de findes/feriados
+            let weekendErrors = [];
+            const defaultTargetWeekend = state.targetShifts.weekend;
+            activeStats.forEach(res => {
+                const residentData = state.residents.find(r => r.id === res.id);
+                const targetWeekend = residentData?.targetShifts.weekend ?? defaultTargetWeekend;
+                if (res.weekendCount > targetWeekend) {
+                    weekendErrors.push(`${res.name} (${res.weekendCount})`);
+                }
+            });
+            
+            const minWeekendShifts = Math.min(...activeStats.map(s => s.weekendCount));
+            // El error de mínimo solo se muestra si el *máximo* no supera el objetivo.
+            // Si el max es 3, es normal que el min sea 2 (ej. 34 cupos).
+            // Pero si el max es 2, el min no debería ser 1.
+            const maxWeekendShifts = Math.max(...activeStats.map(s => s.weekendCount));
+            const weekendMinError = minWeekendShifts < defaultTargetWeekend && maxWeekendShifts <= defaultTargetWeekend;
+
+
+            validationList.innerHTML += `<div class="flex items-center">${(weekendErrors.length === 0 && !weekendMinError) ? '<span class="text-green-500 mr-2">✔️</span>' : '<span class="text-red-500 mr-2">❌</span>'} Balance de findes/feriados equitativo. ${weekendErrors.length > 0 ? `<span class="text-red-500 text-xs ml-2">(Excesos: ${weekendErrors.join(', ')})</span>` : ''} ${weekendMinError ? `<span class="text-red-500 text-xs ml-2">(Mínimo ${minWeekendShifts})</span>` : ''}</div>`;
+        }
+
         function runValidations(schedule, stats) {
             validationList.innerHTML = '';
             let sandwichErrors = [];
@@ -786,6 +862,8 @@
 
             validationList.innerHTML += `<div class="flex items-center">${sandwichErrors.length === 0 ? '<span class="text-green-500 mr-2">✔️</span>' : '<span class="text-red-500 mr-2">❌</span>'} Sin Guardia Sándwich. ${sandwichErrors.length > 0 ? `<span class="text-red-500 text-xs ml-2">(${sandwichErrors.join(', ')})</span>` : ''}</div>`;
             validationList.innerHTML += `<div class="flex items-center">${mandatoryErrors.length === 0 ? '<span class="text-green-500 mr-2">✔️</span>' : '<span class="text-red-500 mr-2">❌</span>'} Criterios obligatorios cumplidos. ${mandatoryErrors.length > 0 ? `<span class="text-red-500 text-xs ml-2">(${mandatoryErrors.join(', ')})</span>` : ''}</div>`;
+            
+            runBalanceValidations(stats);
         }
 
         // --- Renderizado y UI ---
@@ -1116,6 +1194,34 @@
             state.highlights[day].push({ residentName, type });
         }
 
+        // --- NUEVA FUNCIÓN CONTADOR DE CUPOS ---
+        function updateSlotCounters() {
+            let weekdayTotal = 0;
+            let weekendTotal = 0;
+            const year = parseInt(yearInput.value);
+            const month = parseInt(monthSelect.value);
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const monthKey = `${year}-${month}`;
+            const monthSlots = state.daySlots[monthKey] || {};
+            const currentHolidays = holidaysInput.value.split(',').map(s => parseInt(s.trim())).filter(Boolean);
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(year, month, day);
+                const dayOfWeek = date.getDay();
+                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6 || currentHolidays.includes(day);
+                const slotCount = monthSlots[day] || 0;
+                
+                if (isWeekend) {
+                    weekendTotal += slotCount;
+                } else {
+                    weekdayTotal += slotCount;
+                }
+            }
+
+            weekdaySlotCountEl.textContent = weekdayTotal;
+            weekendSlotCountEl.textContent = weekendTotal;
+        }
+
         function validateSwap(sourceResName, sourceDay, targetResName, targetDay) {
             state.highlights = {};
             state.lastInvalidSwap = null;
@@ -1197,12 +1303,21 @@
         }
         
         function handleExportConfig() {
+            // Corrección: Lee los valores de la UI antes de exportar
+            try {
+                state.holidays = holidaysInput.value.split(',').map(s => parseInt(s.trim())).filter(Boolean);
+                state.previousMonthShifts.lastDay = lastDayShiftsInput.value.split(',').map(s => s.trim()).filter(Boolean);
+                state.previousMonthShifts.secondLastDay = secondLastDayShiftsInput.value.split(',').map(s => s.trim()).filter(Boolean);
+            } catch (e) {
+                console.error("Error al leer los campos de la UI durante la exportación:", e);
+            }
+
             const configToExport = {
                 residents: state.residents,
                 groups: state.groups,
-                holidays: state.holidays,
+                holidays: state.holidays, 
                 daySlots: state.daySlots,
-                previousMonthShifts: state.previousMonthShifts,
+                previousMonthShifts: state.previousMonthShifts, 
                 targetShifts: state.targetShifts,
                 dragSwaps: state.dragSwaps,
                 highlights: state.highlights,
@@ -1238,6 +1353,12 @@
                         state.dragSwaps = importedConfig.dragSwaps || [];
                         state.highlights = importedConfig.highlights || {};
                         state.lastInvalidSwap = importedConfig.lastInvalidSwap || null;
+                        
+                        // Cargar valores importados en la UI
+                        holidaysInput.value = state.holidays.join(', ');
+                        lastDayShiftsInput.value = state.previousMonthShifts.lastDay.join(', ');
+                        secondLastDayShiftsInput.value = state.previousMonthShifts.secondLastDay.join(', ');
+
                         saveState();
                         refreshUIFromState();
                         showToast('Configuración importada exitosamente.');
@@ -1268,13 +1389,18 @@
         
         generateBtn.addEventListener('click', generateAndDisplaySchedule);
         [monthSelect, yearInput].forEach(el => el.addEventListener('change', () => {
-            state.previousMonthShifts = { lastDay: [], secondLastDay: [] };
             updatePreviousMonthInputs();
             renderSlotsCalendar();
+            updateSlotCounters(); // NUEVO
             generateAndDisplaySchedule();
         }));
+
+        // NUEVO: Listener para el campo de feriados
+        holidaysInput.addEventListener('change', updateSlotCounters);
+
         targetWeekdayShiftsInput.addEventListener('change', (e) => { state.targetShifts.weekday = parseInt(e.target.value) || 0; saveState(); showToast('Objetivo de guardias de semana actualizado.'); generateAndDisplaySchedule(); });
         targetWeekendShiftsInput.addEventListener('change', (e) => { state.targetShifts.weekend = parseInt(e.target.value) || 0; saveState(); showToast('Objetivo de guardias de fin de semana actualizado.'); generateAndDisplaySchedule(); });
+        
         slotsCalendarGrid.addEventListener('change', (e) => {
             if (e.target.classList.contains('slot-input')) {
                 const day = e.target.dataset.day;
@@ -1285,6 +1411,7 @@
                 if (!state.daySlots[monthKey]) state.daySlots[monthKey] = {};
                 state.daySlots[monthKey][day] = count;
                 saveState();
+                updateSlotCounters(); // NUEVO: Actualizar contadores al cambiar un cupo
             }
         });
         createGroupBtn.addEventListener('click', () => {
