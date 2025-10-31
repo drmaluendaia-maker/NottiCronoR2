@@ -745,32 +745,39 @@
                 // Prioridad 1: Balance total de guardias
                 const targetWeekday = residentData.targetShifts.weekday ?? state.targetShifts.weekday;
                 const targetWeekend = residentData.targetShifts.weekend ?? state.targetShifts.weekend;
-                const totalTarget = targetWeekday + targetWeekend;
                 
-                // Penalización altísima si ya alcanzó o superó el total de guardias
-                if (res.shifts.length >= totalTarget) {
-                    const totalSlots = allSlots.length;
-                    const avgShifts = totalSlots / residents.length;
-                    // Solo penalizar si el número de guardias supera el promedio (para casos de 97+ cupos)
-                    if (res.shifts.length >= Math.ceil(avgShifts)) {
-                         score -= 100000; // Penalización máxima si ya está en el tope
-                    } else {
-                         score -= 50000; // Penalización media si está en el target pero no en el tope
-                    }
-                }
-                // Penalización menor por cada guardia que ya tiene, para elegir al que menos tiene
-                score -= res.shifts.length * 10000;
+                /* ********************************************************** */
+                /* LÓGICA DE PUNTUACIÓN REESCRITA (2025-10-30)                */
+                /* Se reemplaza la lógica de "escalón" (>= target) por       */
+                /* una penalización proporcional que balancea mejor.         */
+                /* ********************************************************** */
 
-                // Prioridad 2: Balance de tipo de guardia (penalización más baja)
-                if (slot.type === 'weekday' && res.weekdayCount >= targetWeekday) {
-                    score -= 5000; // Penalización baja por exceso de semana
+                // Prioridad 1: Penalización por total de guardias (la más alta)
+                // Esto asegura el balance 6-6-6-7 en lugar de 5-7.
+                score -= res.shifts.length * 100000;
+
+                // Prioridad 2: Penalización por tipo de guardia (Finde/Feriado)
+                // Penalización muy alta para evitar desbalance de findes.
+                if (slot.type === 'weekend') {
+                    score -= res.weekendCount * 50000;
+                }
+
+                // Prioridad 3: Penalización por tipo de guardia (Semana)
+                // Penalización media para balancear los días de semana.
+                if (slot.type === 'weekday') {
+                    score -= res.weekdayCount * 10000;
                 }
                 
+                /* --- FIN DE LA LÓGICA REESCRITA --- */
+
+
                 // *** CAMBIO REALIZADO ***
                 // Penalización Fuerte por exceso de finde/feriado
+                /* ELIMINADO: Reemplazado por la lógica proporcional de arriba
                 if (slot.type === 'weekend' && res.weekendCount >= targetWeekend) {
-                    score -= 200000; // MODIFICADO: Aumentada la penalización para priorizar balance de findes
+                    score -= 200000; 
                 }
+                */
                 
                 // *** CAMBIO REALIZADO ***
                 // Prioridad 3: Descanso (más días desde la última guardia es mejor)
@@ -1638,3 +1645,6 @@
     </script>
 </body>
 </html>
+
+
+
